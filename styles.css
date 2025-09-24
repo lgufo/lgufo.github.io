@@ -39,7 +39,7 @@ header {
 }
 
 .logo h2 {
-    color: #2563eb;
+    color: #979797;
     font-weight: 700;
 }
 
@@ -66,7 +66,7 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6fc1ee 0%, #4462be 100%);
     color: white;
     text-align: center;
     padding: 0 2rem;
@@ -79,19 +79,20 @@ header {
 }
 
 .highlight {
-    color: #fbbf24;
+    color: #1d5aa1;
 }
 
 .hero-subtitle {
     font-size: 1.5rem;
     font-weight: 300;
-    margin-bottom: 1rem;
+    margin-bottom: 3rem;
     opacity: 0.9;
 }
 
 .hero-description {
     font-size: 1.1rem;
-    margin-bottom: 2rem;
+    margin-top: 4rem;
+    margin-bottom: 4rem;
     opacity: 0.8;
     max-width: 600px;
     margin-left: auto;
@@ -115,12 +116,12 @@ header {
 }
 
 .btn.primary {
-    background: #fbbf24;
-    color: #1f2937;
+    background: #1d5aa1;
+    color: #ffffff;
 }
 
 .btn.primary:hover {
-    background: #f59e0b;
+    background: #134986;
     transform: translateY(-2px);
 }
 
@@ -132,7 +133,7 @@ header {
 
 .btn.secondary:hover {
     background: white;
-    color: #667eea;
+    color: #2354a3;
     transform: translateY(-2px);
 }
 

@@ -379,6 +379,12 @@ footer {
         display: flex;
     }
 
+    .hero {
+        background-position: right center; /* Move background to right side */
+        background-size: auto 100%;
+        min-height: 100vh;
+    }
+
     /* Add this for the hero-subtitle */
     .hero-subtitle {
         margin-left: 0; /* Reset the negative margin */

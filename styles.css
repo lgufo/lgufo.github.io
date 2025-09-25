@@ -259,12 +259,22 @@ section h2 {
 
 /* Projects Section */
 .projects {
-    background: url('images/wall.jpg');
-    background-size: 100% auto;
-    background-position: center 150px;
-    background-repeat: no-repeat;
+    background-color: #D2B48C;
+    background-image: 
+        repeating-linear-gradient(90deg, 
+            transparent, 
+            transparent 2px, 
+            rgba(139, 69, 19, 0.1) 2px, 
+            rgba(139, 69, 19, 0.1) 4px
+        ),
+        repeating-linear-gradient(0deg, 
+            rgba(160, 82, 45, 0.05) 0px, 
+            rgba(160, 82, 45, 0.05) 1px, 
+            transparent 1px, 
+            transparent 20px
+        );
     min-height: 100vh;
-    padding: 2rem 0;
+    
 }
 
 .projects-grid {
@@ -272,7 +282,7 @@ section h2 {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
     max-width: 1000px;
-    margin: 5rem auto 0 auto; /* Changed from '0 auto' to '3rem auto 0 auto' */
+    margin: 0 auto;
 }
 
 .project-card {
@@ -367,6 +377,16 @@ footer {
 @media (max-width: 768px) {
     .mobile-menu-btn {
         display: flex;
+    }
+
+    /* Add this for the hero-subtitle */
+    .hero-subtitle {
+        margin-left: 0; /* Reset the negative margin */
+        margin-right: 0;
+        text-align: center; /* Center on mobile for better readability */
+        font-size: 1.3rem; /* Slightly smaller on mobile */
+        margin-top: 3rem; /* Less top margin on mobile */
+        padding: 0 1rem; /* Add padding to prevent edge cutoff */
     }
     
     .nav-menu {

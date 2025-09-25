@@ -12,6 +12,31 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// Mobile menu toggle
+const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+const navMenu = document.querySelector('.nav-menu');
+
+mobileMenuBtn.addEventListener('click', function() {
+    mobileMenuBtn.classList.toggle('active');
+    navMenu.classList.toggle('active');
+});
+
+// Close mobile menu when clicking on a link
+document.querySelectorAll('.nav-menu a').forEach(link => {
+    link.addEventListener('click', function() {
+        mobileMenuBtn.classList.remove('active');
+        navMenu.classList.remove('active');
+    });
+});
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(e) {
+    if (!mobileMenuBtn.contains(e.target) && !navMenu.contains(e.target)) {
+        mobileMenuBtn.classList.remove('active');
+        navMenu.classList.remove('active');
+    }
+});
+
 // Add scroll effect to navigation
 window.addEventListener('scroll', function() {
     const header = document.querySelector('header');

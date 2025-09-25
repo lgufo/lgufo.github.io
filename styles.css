@@ -380,7 +380,7 @@ footer {
     }
 
     .hero {
-        background-position: right center; /* Move background to right side */
+        background-position: 75% center; /* Move background to right side */
         background-size: auto 100%;
         min-height: 100vh;
     }

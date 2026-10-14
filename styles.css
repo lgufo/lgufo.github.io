@@ -43,7 +43,7 @@ body {
 body *,
 body *::before,
 body *::after {
-    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, fill 0.4s ease;
 }
 
 ::selection {
@@ -170,7 +170,11 @@ main.home {
 footer {
     padding: 0 0 2.5rem;
     color: var(--meta);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+}
+
+footer p {
+    margin: 0;
 }
 
 h1, h2, h3 {
@@ -493,12 +497,34 @@ footer {
 }
 
 .icon-link svg {
-    width: 1.45rem;
-    height: 1.45rem;
+    display: block;
+    width: 1.6rem;
+    height: 1.6rem;
+    overflow: visible;
 }
 
 .icon-link svg path {
     fill: currentColor;
+}
+
+.icon-link.orcid svg .orcid-bg {
+    fill: var(--link);
+}
+
+.icon-link.orcid:hover svg .orcid-bg {
+    fill: var(--link-hover);
+}
+
+html[data-theme="dark"] .icon-link.orcid svg .orcid-bg {
+    fill: #2a7eaf;
+}
+
+html[data-theme="dark"] .icon-link.orcid:hover svg .orcid-bg {
+    fill: var(--link-hover);
+}
+
+.icon-link.orcid svg .orcid-fg {
+    fill: #fff;
 }
 
 .frame {

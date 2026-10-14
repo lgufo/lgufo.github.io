@@ -54,13 +54,13 @@
             <article class="entry" id="ssa">
                 <h3><a href="projects/ssa.html">LLVM SSA construction</a></h3>
                 <p class="meta">Summer 2025 · Supervised by Prof. <a href="https://shenjiasi.com/" target="_blank" rel="noopener noreferrer">Jiasi Shen</a>, with Ph.D. student <a href="https://hr.tan.pub/" target="_blank" rel="noopener noreferrer">Huiri Tan</a></p>
-                <p>An <a href="https://llvm.org/" target="_blank" rel="noopener noreferrer">LLVM</a> pass that rewrites programs into static single-assignment form, so each value is assigned once.</p>
+                <p>An <a href="https://llvm.org/" target="_blank" rel="noopener noreferrer">LLVM</a> pass that rewrites IR into static single-assignment form: a dominance tree, phi functions on the dominance frontier, and a renaming walk.</p>
             </article>
 
             <article class="entry" id="indirect-calls">
                 <h3><a href="projects/indirect-calls.html">Indirect-call program generation</a></h3>
                 <p class="meta">Fall 2025 · With Ivan Lok and Puyang Zhang, supervised by Prof. <a href="https://shenjiasi.com/" target="_blank" rel="noopener noreferrer">Jiasi Shen</a>, with Ph.D. student <a href="https://hr.tan.pub/" target="_blank" rel="noopener noreferrer">Huiri Tan</a></p>
-                <p>A generator for C++ programs that use function pointers and indirect calls in many shapes, checked by compiling them, for later work on WebAssembly reverse engineering.</p>
+                <p>Two pipelines for compilable C++ programs with varied function-pointer and indirect-call patterns, for later WebAssembly reverse engineering. Dataset transformation often inserted pointers incidental to the source. Skeleton generation and reconstruction compiled all 300 pilot programs.</p>
             </article>
 
             <h3 class="group-label" id="hci">Human–computer interaction</h3>
@@ -68,19 +68,19 @@
             <article class="entry" id="conarrate">
                 <h3><a href="projects/conarrate.html">CoNarrate</a></h3>
                 <p class="meta">Jan 2025 – Sep 2025 · With Hei Ching Iu and Ph.D. student <a href="https://dingdong-liu.github.io/" target="_blank" rel="noopener noreferrer">Dingdong Liu</a> · Prof. <a href="https://www.cse.ust.hk/~mxj/" target="_blank" rel="noopener noreferrer">Xiaojuan Ma</a></p>
-                <p>An intake assistant for asynchronous telehealth. I built the front end, joined the discussions that set the study method, and helped run the user studies. The paper is under <a href="publications.html#conarrate">Publications</a>.</p>
+                <p>An intake assistant for asynchronous telehealth that elicits missing clinical detail before the clinician sees the note. In a 46-participant study the median consultation fell from 22 rounds to 14. I assisted in building the front end, took part in setting the study method, and helped run the user studies. The paper is under <a href="publications.html#conarrate">Publications</a>.</p>
             </article>
 
             <article class="entry" id="cognitive">
                 <h3><a href="projects/cognitive-tests.html">Automated cognitive tests</a></h3>
                 <p class="meta">Jan 2025 – Sep 2025 · With Hei Ching Iu · Prof. <a href="https://www.cse.ust.hk/~mxj/" target="_blank" rel="noopener noreferrer">Xiaojuan Ma</a></p>
-                <p>How much structure a prompt needs before a language model can run a spoken cognitive screening task, including when speech recognition is messy.</p>
+                <p>An ablation of prompt structure for a spoken grocery-shopping cognitive screening task, on GPT-4o and Qwen2.5, including transcripts that contain speech-recognition errors.</p>
             </article>
 
             <article class="entry" id="rednote">
                 <h3><a href="projects/rednote.html">Newcomers on RedNote</a></h3>
                 <p class="meta">Jan 2025 – Sep 2025 · With <a href="https://yuanky123.github.io/" target="_blank" rel="noopener noreferrer">Kangyu Yuan</a>, <a href="https://hlyuag.student.ust.hk/" target="_blank" rel="noopener noreferrer">Hanfang Lyu</a>, <a href="https://delpanz7.github.io/panz7-now-here/" target="_blank" rel="noopener noreferrer">Ziqi Pan</a>, <a href="https://yuanhaozhang.xyz/" target="_blank" rel="noopener noreferrer">Yuanhao Zhang</a>, <a href="https://junzeleo.github.io/" target="_blank" rel="noopener noreferrer">Junze Li</a>, <a href="https://bguoac.info/" target="_blank" rel="noopener noreferrer">Bingcan Guo</a>, <a href="https://jiaxiong.notion.site/Jiaxiong-Hu-fdd7394b52f74ae78ab438aa93164c3d" target="_blank" rel="noopener noreferrer">Jiaxiong Hu</a>, and <a href="https://scholar.google.com/citations?user=4Y2pzk0AAAAJ" target="_blank" rel="noopener noreferrer">Qingyu Guo</a> · Prof. <a href="https://www.cse.ust.hk/~mxj/" target="_blank" rel="noopener noreferrer">Xiaojuan Ma</a></p>
-                <p>A study of how TikTok newcomers and existing users started talking to each other on RedNote. The paper is under <a href="publications.html#rednote">Publications</a>.</p>
+                <p>An analysis of 3,510 RedNote posts from the January 2025 arrival of TikTok users, identifying twelve strategies in the initial cross-cultural exchange. The paper is under <a href="publications.html#rednote">Publications</a>.</p>
             </article>
 
             <h3 class="group-label" id="medical">Computer vision</h3>
@@ -88,7 +88,7 @@
             <article class="entry">
                 <h3><a href="projects/medical-imaging.html">Medical imaging experiments</a></h3>
                 <p class="meta">Aug 2024 – Dec 2024 · With Prof. <a href="https://xmengli.github.io/" target="_blank" rel="noopener noreferrer">Xiaomeng Li</a> and Ph.D. student <a href="https://mcgregorwwww.github.io/" target="_blank" rel="noopener noreferrer">Haonan Wang</a></p>
-                <p>My earliest research: classifying skin photos and marking the spleen in CT scans.</p>
+                <p>Skin-lesion classification with ResNet-50 on ISIC 2016, and spleen segmentation in CT with a 3D U-Net.</p>
             </article>
         </section>
 
@@ -98,13 +98,13 @@
             <article class="entry" id="gemmini">
                 <h3><a href="projects/gemmini.html">Hardware–software co-optimization on Gemmini</a></h3>
                 <p class="meta">Spring 2026 · ELEC 5140 Advanced Computer Architecture · with Puyang Zhang</p>
-                <p>Explored accelerator configurations and software tiling for CNN and MLP workloads, and looked at where extra hardware stops improving the result.</p>
+                <p>Hardware parameter sweeps and manual loop tiling for MLP and CNN kernels on Gemmini. A 32×32 array together with a tile that fits the accumulator gave a 4× speedup on the large convolution. A larger TLB slowed the automatic schedule.</p>
             </article>
 
             <article class="entry" id="amy">
                 <h3><a href="projects/amy.html">Amy compiler</a></h3>
                 <p class="meta">Spring 2026 · COMP 4121 Modern Compiler Construction</p>
-                <p>An interpreter and a compiler for the Amy language, from lexing and parsing through type inference to WebAssembly.</p>
+                <p>An interpreter and a WebAssembly compiler for Amy, sharing a front end of longest-match lexing, LL(1) parsing, name analysis, and constraint-based type checking.</p>
             </article>
         </section>
     </main>

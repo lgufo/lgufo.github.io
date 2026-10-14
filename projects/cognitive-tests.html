@@ -41,29 +41,31 @@
             <h1>Automated cognitive tests</h1>
             <p class="meta">Jan 2025 – Sep 2025 · With Hei Ching Iu · Prof. <a href="https://www.cse.ust.hk/~mxj/" target="_blank" rel="noopener noreferrer">Xiaojuan Ma</a></p>
 
-            <p>Some cognitive screening is a guided conversation. In the grocery shopping task, a person is walked through a short errand in four parts, and the way they answer is part of the signal. A conversational agent can run that script. Speech is transcribed first, then the model replies from the task rules and from where the figurine sits on the shop map. Whether the reply is appropriate depends on how the prompt is written, and on whether the recognizer got the words right.</p>
+            <p>The grocery-shopping task is a four-part cognitive screening dialogue. The participant’s answers are part of the measurement. A conversational agent can administer the script: speech is transcribed, and the model replies from the task rules and from the figurine’s position on the shop map. Response quality depends on the prompt structure and on the accuracy of the transcript.</p>
+            <p>Hu et al. showed that a three-step scaffold improves this dialogue: classify the participant’s intention, match a strategy for that step, then select the reply. Hei Ching Iu and I ablated that scaffold on GPT-4o and Qwen2.5-32B-Instruct. I ran and labelled the two intermediate prompts. Hei Ching Iu ran the full scaffold and the minimal prompt, and labelled turns that contained speech-recognition errors. I wrote the results, discussion, and conclusion of the group report.</p>
 
-            <h2>Four prompts, from a script down to one instruction</h2>
-            <p>The agent we started from already walks the task in three steps: decide what the person is trying to do, match a strategy for that step, then choose the reply. Jiaxiong Hu and colleagues had shown that this scaffolding helps. Hei Ching Iu and I took it apart, on GPT-4o and on Qwen, to see which piece was doing the work.</p>
-            <p>The fullest prompt keeps the three steps. Each step’s answer, and the reason for it, is handed to the next step. The next prompt folds those steps into one question and still asks for a reason. The third is that same question with the reason left out. The last prompt is only the situation and the rules: no staged script, and no request to think out loud.</p>
+            <h2>Prompt conditions</h2>
+            <p>The four prompts ablate the original scaffold. The first retains the three steps and passes each step’s answer, together with its reason, to the next step. The second collapses the three steps into one question and still requests a reason. The third uses that question and omits the reason. The fourth states only the situation and the task rules. The comparison separates the staged handoff, the written rationale, and the task rules.</p>
             <figure>
                 <div class="plate">
                     <img src="../images/cognitive/cognitive-workflow.png" alt="Workflow of four prompting levels, from a three-stage chain-of-thought script down to a single instruction">
                 </div>
-                <figcaption>The four prompting levels, from the three-step script to the shortest instruction.</figcaption>
+                <figcaption>Four prompt conditions, from the three-step scaffold to the task rules alone.</figcaption>
             </figure>
 
-            <h2>Clean transcripts, and ones the recognizer mangled</h2>
-            <p>Three dialogues were drawn at random from 32 user studies: 65, 57, and 43 turns, of which 15, 11, and 18 contained a speech-recognition mistake. Every turn went through all four prompts and both models. Each reply was marked appropriate or not by hand. The same turns were then scored three ways: only the clean ones, only the ones the recognizer mangled, and the mixture a deployed system would hear.</p>
-            <p>I ran the two middle prompts, the single question with and without a written reason, and labelled those replies. Hei Ching Iu ran the fullest prompt and the bare one, and labelled which turns the recognizer had mangled.</p>
+            <h2>Evaluation</h2>
+            <p>We drew three dialogues at random from 32 user studies: 65, 57, and 43 turns, of which 15, 11, and 18 contained a speech-recognition error. Every turn was run under all four prompts and both models. Each reply was labelled appropriate or inappropriate by hand. We then scored three partitions of the same turns: transcripts without recognition errors, transcripts with recognition errors, and the mixed input a deployed system would receive. The reported rate is the share of appropriate replies, averaged across the three dialogues.</p>
             <figure>
                 <div class="plate">
                     <img src="../images/cognitive/cognitive-results.png" alt="Bar chart of appropriate-response rates for GPT-4o and Qwen across four prompting levels">
                 </div>
-                <figcaption>Appropriate replies stay above 90% for the most structured prompt when the transcript is clean. Thinner prompts and recognition errors both pull that rate down. Qwen holds up better when the recognizer has mangled the words.</figcaption>
+                <figcaption>Appropriate-response rate by prompt condition and model. The most structured prompt stays above 90% on error-free transcripts. Less structure and recognition errors both lower the rate. Qwen2.5 is more robust to recognition errors.</figcaption>
             </figure>
-            <p>The fullest prompt leads the other three, especially on a clean transcript. Asking the model to write its reason leaves the rate about where the same single question sits without that request, and the bare instruction lands in that same lower band. Recognition errors pull every prompt down. Qwen holds up better than GPT-4o as the prompt gets thinner. About half the turns in each dialogue are navigation commands, and Qwen answers those in a steady way even when the words are off.</p>
-            <p>A thinner prompt can still sound reasonable on a noisy turn. Reading the replies, both models have a harder time changing tasks once the three-step script is gone, and a short prompt sometimes gives a nonsense answer to a simple request that the staged version handles steadily.</p>
+            <p>The full scaffold outperforms the other three conditions, particularly on error-free transcripts. Requesting a written reason does not raise the rate above the same single question without that request, and the minimal instruction falls in the same lower range. This result is contrary to the expectation that an explicit rationale would improve responses on its own. Recognition errors lower every condition. As the prompt becomes less structured, Qwen2.5 outperforms GPT-4o. On turns with recognition errors, its two less structured prompts remain the higher of the two models. About 53% of turns in each dialogue are navigation commands, and Qwen2.5 answers those commands consistently even when the transcript is inaccurate.</p>
+            <p>A less structured prompt can still produce a plausible sentence on a noisy turn. Without the three-step scaffold, both models more often fail to change tasks. A short prompt also sometimes answers a simple request incorrectly, while the staged prompt handles the same request consistently. An appropriate-looking reply can therefore correspond to the wrong step of the task.</p>
+
+            <h2>Limitations</h2>
+            <p>The labels record whether a reply was appropriate. They do not measure whether the model identified the current step of the task. Three dialogues also cover only part of the interaction space in the 32 studies. A follow-up would score whether the guidance was the correct next action, separately from the surface plausibility of the sentence, and would use more of the collected dialogues.</p>
 
         </div>
     </main>

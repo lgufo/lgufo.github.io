@@ -41,12 +41,12 @@
             <h1>Hardware–software co-optimization on Gemmini</h1>
             <p class="meta">Spring 2026 · ELEC 5140 Advanced Computer Architecture · with Puyang Zhang</p>
 
-            <p>A neural network spends its time on multiply-adds, and on moving the numbers those multiply-adds need. <a href="https://github.com/ucb-bar/gemmini" target="_blank" rel="noopener noreferrer">Gemmini</a> generates a small accelerator next to a RISC-V core for that pattern. The core sends commands. A systolic array, a grid of tiny calculators that pass values to their neighbors, does the arithmetic. A scratchpad and an accumulator keep the current tile on the chip. A DMA engine carries tiles to and from main memory, and a TLB translates the addresses on the way.</p>
-            <p>Puyang Zhang and I ran MLP and CNN kernels on Gemmini’s simulator. My part was the hardware sweep: array size (8×8, 16×16, 32×32), on-chip memory, the TLB, how many memory requests could be in flight at once, and the reservation station, the queue of loads, stores, and executes waiting to run. Puyang’s part was the tiling, choosing loop tiles by hand so they fit the scratchpad and the accumulator. The useful experiments changed both.</p>
+            <p>DNN inference is dominated by multiply-accumulates and by the data movement those operations require. <a href="https://github.com/ucb-bar/gemmini" target="_blank" rel="noopener noreferrer">Gemmini</a> generates a systolic-array accelerator attached to a RISC-V core. The core issues commands. The array performs the arithmetic, passing operands between neighboring processing elements. A scratchpad and an accumulator hold the current tile on chip. A DMA engine moves tiles to and from main memory, and a TLB translates the addresses.</p>
+            <p>Puyang Zhang and I evaluated MLP and CNN kernels on Gemmini’s simulator. I was responsible for the hardware parameter sweep: systolic-array size (8×8, 16×16, and 32×32), on-chip memory, the TLB, the maximum number of in-flight memory requests, and the reservation station, which queues loads, stores, and executes. Puyang Zhang was responsible for manual loop tiling, choosing tiles that fit the scratchpad and the accumulator. The reported speedups come from changing both.</p>
 
-            <h2>Small kernels</h2>
-            <p>The small MLP is two matrix multiplies, 16×64×128 and then 16×128×32. The small CNN takes a 13×13 image with 3 channels down to 7×7 with 16 channels. A wider array helps when the kernel is full of arithmetic. On the small CNN it barely did: moving from 8×8 to 16×16 dropped the total from 5,129 cycles to 4,827, while TLB wait stayed near 1,850 cycles and a full reservation station stayed near 4,600. The extra calculators had little new work.</p>
-            <p>Manual tiles, sized to the array and the on-chip memories, moved the totals more. On the 16×16 MLP, cycles fell from 3,985 to 2,207, about 1.8×. On the CNN with a larger TLB and more in-flight memory requests, they fell from 4,530 to 2,728, about 1.66×. “+TLB” below is that larger TLB and in-flight setting.</p>
+            <h2>Small MLP and CNN workloads</h2>
+            <p>The small MLP is two matrix multiplications, 16×64×128 followed by 16×128×32. The small CNN maps a 13×13 input with 3 channels to a 7×7 output with 16 channels. A larger array reduces cycle count when the kernel is compute-bound. On the small CNN the reduction is small: moving from 8×8 to 16×16 lowers the total from 5,129 cycles to 4,827, while TLB wait remains near 1,850 cycles and reservation-station-full cycles remain near 4,600.</p>
+            <p>Manual tiles sized to the array and the on-chip memories change the totals by more. On the 16×16 MLP, cycles fall from 3,985 to 2,207, a 1.8× speedup. On the CNN with a larger TLB and a higher in-flight limit, they fall from 4,530 to 2,728, a 1.66× speedup. In the figure, “+TLB” denotes that TLB and in-flight configuration.</p>
             <figure>
 <svg class="chart" viewBox="0 0 640 292" role="img" aria-label="Simulated cycles for small MLP and CNN kernels. Each pair is automatic tiling then manual tiling, on an 8 by 8 array, a 16 by 16 array, and a 16 by 16 array with a larger TLB.">
 <line class="grid" x1="54" y1="228.0" x2="630" y2="228.0"/>
@@ -84,13 +84,55 @@
 <text class="cat" x="582.0" y="248" text-anchor="middle" font-size="13">CNN</text>
 <text class="cat" x="582.0" y="266" text-anchor="middle" font-size="13">+TLB</text>
 </svg>
-                <figcaption>Simulated cycles. Within each pair, automatic tiling is on the left and manual tiling is on the right.</figcaption>
+                <figcaption>Simulated cycles for the small workloads. In each pair, automatic tiling is on the left and manual tiling is on the right.</figcaption>
             </figure>
 <p class="legend"><span><i class="auto"></i>Automatic tiling</span><span><i class="manual"></i>Manual tiling</span></p>
+            <p>The counter breakdown accounts for the difference. On the MLP, execute cycles fall from 4,278 to 1,462 when the array grows from 8×8 to 16×16, and that reduction is most of the change in the total. On the CNN, execute cycles are already 1,072 at 8×8. TLB wait stays near 1,850 cycles, and reservation-station-full cycles stay near 4,600. The additional array width has little arithmetic to absorb, and the stalls remain.</p>
+            <figure>
+<svg class="chart" viewBox="0 0 640 268" role="img" aria-label="Cycle breakdown for the small MLP and CNN. Each group is execute, load, store, TLB wait, or reservation-station-full cycles. The four bars are the MLP at 8 by 8, the MLP at 16 by 16, the CNN at 8 by 8, and the CNN at 16 by 16.">
+<line class="grid" x1="54" y1="8.0" x2="630" y2="8.0"/>
+<text class="tick" x="46" y="12.0" text-anchor="end" font-size="12">7k</text>
+<line class="grid" x1="54" y1="228.0" x2="630" y2="228.0"/>
+<text class="tick" x="46" y="232.0" text-anchor="end" font-size="12">0</text>
+<line class="grid" x1="54" y1="165.1" x2="630" y2="165.1"/>
+<text class="tick" x="46" y="169.1" text-anchor="end" font-size="12">2k</text>
+<line class="grid" x1="54" y1="102.3" x2="630" y2="102.3"/>
+<text class="tick" x="46" y="106.3" text-anchor="end" font-size="12">4k</text>
+<line class="grid" x1="54" y1="39.4" x2="630" y2="39.4"/>
+<text class="tick" x="46" y="43.4" text-anchor="end" font-size="12">6k</text>
+<rect class="bar-m8" x="92.3" y="93.5" width="11" height="134.5"/>
+<rect class="bar-m16" x="106.3" y="182.1" width="11" height="45.9"/>
+<rect class="bar-c8" x="120.3" y="194.3" width="11" height="33.7"/>
+<rect class="bar-c16" x="134.3" y="214.1" width="11" height="13.9"/>
+<text class="cat" x="118.8" y="248" text-anchor="middle" font-size="13">Execute</text>
+<rect class="bar-m8" x="205.9" y="191.8" width="11" height="36.2"/>
+<rect class="bar-m16" x="219.9" y="187.7" width="11" height="40.3"/>
+<rect class="bar-c8" x="233.9" y="211.5" width="11" height="16.5"/>
+<rect class="bar-c16" x="247.9" y="208.3" width="11" height="19.7"/>
+<text class="cat" x="232.4" y="248" text-anchor="middle" font-size="13">Load</text>
+<rect class="bar-m8" x="319.5" y="207.3" width="11" height="20.7"/>
+<rect class="bar-m16" x="333.5" y="212.6" width="11" height="15.4"/>
+<rect class="bar-c8" x="347.5" y="216.8" width="11" height="11.2"/>
+<rect class="bar-c16" x="361.5" y="217.5" width="11" height="10.5"/>
+<text class="cat" x="346.0" y="248" text-anchor="middle" font-size="13">Store</text>
+<rect class="bar-m8" x="433.1" y="198.1" width="11" height="29.9"/>
+<rect class="bar-m16" x="447.1" y="197.5" width="11" height="30.5"/>
+<rect class="bar-c8" x="461.1" y="169.0" width="11" height="59.0"/>
+<rect class="bar-c16" x="475.1" y="170.1" width="11" height="57.9"/>
+<text class="cat" x="459.6" y="248" text-anchor="middle" font-size="13">TLB</text>
+<rect class="bar-m8" x="546.7" y="34.7" width="11" height="193.3"/>
+<rect class="bar-m16" x="560.7" y="105.0" width="11" height="123.0"/>
+<rect class="bar-c8" x="574.7" y="82.4" width="11" height="145.6"/>
+<rect class="bar-c16" x="588.7" y="82.5" width="11" height="145.5"/>
+<text class="cat" x="573.2" y="248" text-anchor="middle" font-size="13">RS full</text>
+</svg>
+                <figcaption>Cycle breakdown for the small workloads. In each group the bars are, from left to right, the MLP at 8×8, the MLP at 16×16, the CNN at 8×8, and the CNN at 16×16.</figcaption>
+            </figure>
+<p class="legend"><span><i class="m8"></i>MLP 8×8</span><span><i class="m16"></i>MLP 16×16</span><span><i class="c8"></i>CNN 8×8</span><span><i class="c16"></i>CNN 16×16</span></p>
 
-            <h2>A heavier convolution</h2>
-            <p>The larger CNN has a 28×28 output, 128 input channels, 128 output channels, and a 3×3 kernel. After the image is flattened into a matrix, the multiplication is 784×1152 by 1152×128. That shape has plenty of arithmetic, and it does not fit in the accumulator as one tile.</p>
-            <p>Growing the array under automatic tiling, from 16×16 to 32×32, cut cycles from 523,798 to 228,781, about 2.3×. Manual tiles on the 32×32 array cut that further to 130,877, about 1.7× against the automatic schedule on the same array. Together, against the 16×16 automatic baseline, the speedup is 4.0×. The same manual tiles helped less on the 16×16 array (523,798 to 468,703) than on the 32×32 array, which is the slide deck’s observation: the tile shape matters more once the array is wide enough to be left idle.</p>
+            <h2>Large CNN workload</h2>
+            <p>The larger CNN has a 28×28 output, 128 input channels, 128 output channels, and a 3×3 kernel. After im2col, the multiplication is 784×1152 by 1152×128. The workload is compute-heavy, and the full output does not fit in the accumulator as one tile. Accumulator rows used by a tile are ceil(output channels / array width) × output rows × output columns. The schedule keeps that quantity under half of the accumulator rows, leaving room for double buffering. On the 32×32 array the budget is 512 rows. A full output tile requires 3,136 rows. The manual tile, 18 output rows by 28 output columns by 32 output channels, uses 504 rows.</p>
+            <p>Under automatic tiling, increasing the array from 16×16 to 32×32 reduces cycles from 523,798 to 228,781, about 2.3×. Manual tiles on the 32×32 array reduce that further to 130,877, about 1.7× relative to automatic tiling on the same array. Relative to the 16×16 automatic baseline, the combined speedup is 4.0×. The same manual tiles reduce the 16×16 total only from 523,798 to 468,703. Tile shape therefore matters more once the array is wide enough to stall for lack of work.</p>
             <figure>
 <svg class="chart" viewBox="0 0 640 292" role="img" aria-label="Simulated cycles for the large CNN. Each pair is automatic tiling then manual tiling, on 8 by 8, 16 by 16, and 32 by 32 arrays.">
 <line class="grid" x1="54" y1="228.0" x2="630" y2="228.0"/>
@@ -118,12 +160,12 @@
 <text class="cat" x="534.0" y="248" text-anchor="middle" font-size="13">32×32</text>
 <text class="cat" x="534.0" y="266" text-anchor="middle" font-size="13">array</text>
 </svg>
-                <figcaption>The large CNN, same pairing of automatic and manual tiling. The 8×8 bars dominate because that array spends most of its time in the arithmetic.</figcaption>
+                <figcaption>The large CNN under automatic and manual tiling. The 8×8 configuration is dominated by arithmetic cycles.</figcaption>
             </figure>
 <p class="legend"><span><i class="auto"></i>Automatic tiling</span><span><i class="manual"></i>Manual tiling</span></p>
 
-            <h2>Where the cycles went</h2>
-            <p>On the 32×32 array the execute time barely changes between the two schedules, about 111,000 cycles either way. What changes is the waiting. TLB wait falls from 86,842 cycles to 1,646. Cycles spent with the reservation station full fall from 219,468 to 121,554. The tile shape did not make the array faster at arithmetic. It stopped the array from stalling on address translation and on a full command queue.</p>
+            <h2>Cycle breakdown on the 32×32 array</h2>
+            <p>On the 32×32 array, execute cycles are about 111,000 under both schedules. The difference is in the stalls. TLB wait falls from 86,842 cycles to 1,646. Reservation-station-full cycles fall from 219,468 to 121,554. The manual tile does not increase arithmetic throughput. It reduces stalls on address translation and on a full reservation station.</p>
             <figure>
 <svg class="chart" viewBox="0 0 640 292" role="img" aria-label="Cycle breakdown on the 32 by 32 array for the large CNN. Each pair is automatic tiling then manual tiling, for execute cycles, TLB wait, and reservation-station-full cycles.">
 <line class="grid" x1="54" y1="228.0" x2="630" y2="228.0"/>
@@ -151,10 +193,68 @@
 <text class="cat" x="534.0" y="248" text-anchor="middle" font-size="13">RS</text>
 <text class="cat" x="534.0" y="266" text-anchor="middle" font-size="13">full</text>
 </svg>
-                <figcaption>The 32×32 array, automatic tiling beside manual tiling. Execute stays flat. TLB wait and a full reservation station are what the manual tiles remove.</figcaption>
+                <figcaption>The 32×32 array, automatic tiling beside manual tiling. Execute cycles stay flat. Manual tiling removes TLB wait and reservation-station-full cycles.</figcaption>
             </figure>
 <p class="legend"><span><i class="auto"></i>Automatic tiling</span><span><i class="manual"></i>Manual tiling</span></p>
-            <p>Pushing the other knobs further stopped paying off once they were no longer the bottleneck. On this convolution, a 16×16 array with the default reservation station (load, store, and execute entries at 8/4/16) already sat at 523,798 cycles with automatic tiles and 468,703 with manual tiles, and a deeper queue did not move those totals. A larger TLB and more in-flight requests did help the small CNN, from 4,827 cycles to 4,530 under automatic tiling. Extra hardware paid off when the schedule could use it.</p>
+            <h2>TLB and reservation-station sweeps</h2>
+            <p>On the same convolution, a larger TLB and a higher in-flight limit do not improve the result by themselves. With automatic tiling, configurations of 4 TLB entries with 16 in-flight requests and 8 entries with 32 in-flight requests both take 523,798 cycles. Raising the pair to 16 entries and 64 in-flight requests increases the total to 887,324, with both execute cycles and reservation-station-full cycles higher. Manual tiling stays near 469,000 cycles at all three settings. The larger memory configuration perturbs the automatic schedule. The manual tile, which already fits the accumulator, is stable across the same sweep.</p>
+            <figure>
+<svg class="chart" viewBox="0 0 640 300" role="img" aria-label="Large CNN cycles for three TLB and max-in-flight settings. Each pair is automatic tiling then manual tiling.">
+<line class="grid" x1="54" y1="228.0" x2="630" y2="228.0"/>
+<text class="tick" x="46" y="232.0" text-anchor="end" font-size="12">0</text>
+<line class="grid" x1="54" y1="173.0" x2="630" y2="173.0"/>
+<text class="tick" x="46" y="177.0" text-anchor="end" font-size="12">250k</text>
+<line class="grid" x1="54" y1="118.0" x2="630" y2="118.0"/>
+<text class="tick" x="46" y="122.0" text-anchor="end" font-size="12">500k</text>
+<line class="grid" x1="54" y1="63.0" x2="630" y2="63.0"/>
+<text class="tick" x="46" y="67.0" text-anchor="end" font-size="12">750k</text>
+<line class="grid" x1="54" y1="8.0" x2="630" y2="8.0"/>
+<text class="tick" x="46" y="12.0" text-anchor="end" font-size="12">1.0M</text>
+<rect class="bar-auto" x="144.2" y="112.8" width="14" height="115.2"/>
+<rect class="bar-manual" x="162.2" y="124.7" width="14" height="103.3"/>
+<text class="cat" x="160.2" y="248" text-anchor="middle" font-size="13">TLB 4</text>
+<text class="cat" x="160.2" y="266" text-anchor="middle" font-size="13">in flight 16</text>
+<rect class="bar-auto" x="333.5" y="112.8" width="14" height="115.2"/>
+<rect class="bar-manual" x="351.5" y="124.9" width="14" height="103.1"/>
+<text class="cat" x="349.5" y="248" text-anchor="middle" font-size="13">TLB 8</text>
+<text class="cat" x="349.5" y="266" text-anchor="middle" font-size="13">in flight 32</text>
+<rect class="bar-auto" x="522.8" y="32.8" width="14" height="195.2"/>
+<rect class="bar-manual" x="540.8" y="124.9" width="14" height="103.1"/>
+<text class="cat" x="538.8" y="248" text-anchor="middle" font-size="13">TLB 16</text>
+<text class="cat" x="538.8" y="266" text-anchor="middle" font-size="13">in flight 64</text>
+</svg>
+                <figcaption>Large CNN on a 16×16 array. Manual tiling is stable across the TLB sweep. The largest TLB and in-flight setting slows automatic tiling.</figcaption>
+            </figure>
+<p class="legend"><span><i class="auto"></i>Automatic tiling</span><span><i class="manual"></i>Manual tiling</span></p>
+            <p>The reservation-station sweep has the same structure. Entries are listed as load, store, and execute. A 4/4/4 configuration takes 889,169 cycles with automatic tiles and 800,332 with manual tiles. Raising only the execute entries, to 4/4/8, yields 523,798 and 469,548. The default 8/4/16 yields 523,798 and 468,703. For this convolution, the execute queue determines the total. Load entries beyond 4 and execute entries beyond 8 leave it unchanged. On the small CNN, a larger TLB does reduce automatic-tiling cycles, from 4,827 to 4,530, because that kernel is stalled on address translation.</p>
+            <figure>
+<svg class="chart" viewBox="0 0 640 300" role="img" aria-label="Large CNN cycles for three reservation-station sizes. Each pair is automatic tiling then manual tiling. Sizes are load, store, and execute entries.">
+<line class="grid" x1="54" y1="228.0" x2="630" y2="228.0"/>
+<text class="tick" x="46" y="232.0" text-anchor="end" font-size="12">0</text>
+<line class="grid" x1="54" y1="173.0" x2="630" y2="173.0"/>
+<text class="tick" x="46" y="177.0" text-anchor="end" font-size="12">250k</text>
+<line class="grid" x1="54" y1="118.0" x2="630" y2="118.0"/>
+<text class="tick" x="46" y="122.0" text-anchor="end" font-size="12">500k</text>
+<line class="grid" x1="54" y1="63.0" x2="630" y2="63.0"/>
+<text class="tick" x="46" y="67.0" text-anchor="end" font-size="12">750k</text>
+<line class="grid" x1="54" y1="8.0" x2="630" y2="8.0"/>
+<text class="tick" x="46" y="12.0" text-anchor="end" font-size="12">1.0M</text>
+<rect class="bar-auto" x="144.2" y="32.4" width="14" height="195.6"/>
+<rect class="bar-manual" x="162.2" y="51.9" width="14" height="176.1"/>
+<text class="cat" x="160.2" y="248" text-anchor="middle" font-size="13">4 / 4 / 4</text>
+<text class="cat" x="160.2" y="266" text-anchor="middle" font-size="13">load, store, exe</text>
+<rect class="bar-auto" x="333.5" y="112.8" width="14" height="115.2"/>
+<rect class="bar-manual" x="351.5" y="124.7" width="14" height="103.3"/>
+<text class="cat" x="349.5" y="248" text-anchor="middle" font-size="13">4 / 4 / 8</text>
+<text class="cat" x="349.5" y="266" text-anchor="middle" font-size="13">load, store, exe</text>
+<rect class="bar-auto" x="522.8" y="112.8" width="14" height="115.2"/>
+<rect class="bar-manual" x="540.8" y="124.9" width="14" height="103.1"/>
+<text class="cat" x="538.8" y="248" text-anchor="middle" font-size="13">8 / 4 / 16</text>
+<text class="cat" x="538.8" y="266" text-anchor="middle" font-size="13">load, store, exe</text>
+</svg>
+                <figcaption>Reservation-station entries on the large CNN. A deeper execute queue accounts for the improvement from 4/4/4 to the default 8/4/16.</figcaption>
+            </figure>
+<p class="legend"><span><i class="auto"></i>Automatic tiling</span><span><i class="manual"></i>Manual tiling</span></p>
 
         </div>
     </main>

@@ -41,40 +41,42 @@
             <h1>Indirect-call program generation</h1>
             <p class="meta">Fall 2025 · With Ivan Lok and Puyang Zhang · Supervised by Prof. <a href="https://shenjiasi.com/" target="_blank" rel="noopener noreferrer">Jiasi Shen</a>, with Ph.D. student <a href="https://hr.tan.pub/" target="_blank" rel="noopener noreferrer">Huiri Tan</a></p>
 
-            <p>A model that turns WebAssembly back into readable C++ has a particular blind spot. In the binary, a call through a function pointer is an indirect jump through a table. The function’s name, and the reason the program picked it, are gone. To teach a model to recover that, we wanted many C++ programs in which function pointers and indirect calls appear often, in different shapes, and we wanted each program to compile. Ivan Lok, Puyang Zhang, and I tried two ways to get those programs.</p>
+            <p>Recovering C++ from WebAssembly requires reconstructing indirect calls. In the binary, a call through a function pointer is <code>call_indirect</code>, an indirect jump through a table. The callee’s name and the reason it was selected are absent. Training a model to recover them requires many compilable C++ programs in which function pointers and indirect calls appear in varied forms.</p>
+            <p>A direct prompt to write such a program does not produce that set. Outputs collapse onto a few recurring patterns, principally calculators and sorting comparators. With Ivan Lok and Puyang Zhang, we compared two generation pipelines for compilable programs with greater structural variety.</p>
 
-            <h2>Rewrite programs that already exist</h2>
-            <p>Human-written code is already varied, so we started there: CodeNet, The Stack, and a smaller set of less famous repositories. Files were kept under a thousand lines and split when they were longer. A model was asked, with a few handwritten examples, to rewrite each program so it would lean on C-style function pointers while keeping the original behavior. A script then compiled the result and, on failure, sent the compiler errors back for a repair.</p>
-            <p>The accepted programs did contain indirect calls. Many of them fought the source they came from. A straight-line algorithm, or code built around C++ resource management, has little natural use for a callback, so the pointer often looked pasted on. Lengths also piled up around 90–130 lines. The model kept deleting parts it judged unnecessary, so a long input and a short input came out a similar size.</p>
+            <h2>Dataset transformation</h2>
+            <p>The first pipeline rewrites existing programs. We used three sources: CodeNet, on the order of 500,000 C++ solutions to programming problems; The Stack, a large collection of permissively licensed GitHub code; and Wild-C, an internal set of about 120,000 translation units from lesser-known repositories. Files longer than 1,000 lines were split.</p>
+            <p>A gpt-4o prompt, with a few handwritten examples, instructed the model to rewrite each program so that it used C-style function pointers while preserving the original behavior. A script compiled the result and, on failure, returned the compiler diagnostics for repair.</p>
+            <p>The accepted programs contained indirect calls. Many rewrites fit the source poorly. Straight-line algorithms and code organized around C++ resource management have little use for a callback, so the inserted pointer was often incidental to the computation. Output length concentrated around 90–130 lines. The model deleted material it treated as unnecessary, and long and short inputs produced outputs of similar size.</p>
 
-            <h2>Build a skeleton, scramble it, ask for a reconstruction</h2>
-            <p>The second pipeline decides the shape before the model writes anything. A Python generator, using templates, picks four or five patterns from a library of about fourteen. The library is aimed at things a decompiler finds hard: an array of function pointers, a struct that holds one, a state machine driven by a map, nested structures, and a chain of callbacks. The generator emits a compilable outline, with its own random names, sizes, and thresholds.</p>
-            <p>We then damage that outline on purpose. Blocks of ten to twenty lines are shuffled. Function bodies are deleted while the signatures stay. Statements are cut in half. A misleading fragment is dropped in. The model has to reconstruct a program that still respects the names and pieces left behind. A memorized example does not fit, because the skeleton is different every time.</p>
-            <p>A repair loop compiles the reconstruction with Clang, for native code and for WebAssembly, and feeds the errors back for at most two more tries. Each accepted program is stored with a JSON file: which patterns were requested, the random parameters, how many repairs it took, and the control-flow signature we expect, such as the size of a function-pointer table. That file is the ground truth for a later benchmark. A decompiler is scored on whether it recovered those patterns, not on whether its text matches ours.</p>
-            <p>On a pilot of 300 programs, raw reconstructions compiled about 60% of the time. After the repair loop, all 300 compiled for both targets. They landed around 250–350 lines, and every sample used at least four distinct kinds of indirect control flow.</p>
+            <h2>Skeleton generation and reconstruction</h2>
+            <p>The second pipeline fixes the program shape before the model writes code. A Python generator, using Jinja2 templates, selects four or five patterns from a library of fourteen. The library targets constructs that are difficult for a decompiler: an array of function pointers, a struct that holds a function pointer, a state machine driven by a map, nested structures, and a chain of callbacks. The generator emits a compilable outline with randomized names, sizes, and thresholds.</p>
+            <p>We then degrade that outline. Blocks of ten to twenty lines are shuffled. Function bodies are deleted and signatures are retained. Statements are truncated. A misleading fragment is inserted. The model must reconstruct a program consistent with the remaining names and fragments. Because the skeleton changes on every sample, a memorized example cannot satisfy the prompt.</p>
+            <p>A repair loop compiles the reconstruction with Clang, for native x86-64 and for <code>wasm32-wasi</code>, and returns the diagnostics for at most two further attempts. Each accepted program is stored with a JSON record for later benchmarking: the requested templates, the random parameters (seeds, array sizes, and thresholds), the repair record (attempts, token use, and binary size), and the expected control-flow signature, including function-pointer table size and call depth. A decompiler is scored on whether it recovered those patterns.</p>
+            <p>On a pilot of 300 programs, raw reconstructions compiled about 60% of the time. After the repair loop, all 300 compiled for both targets. Programs were about 250–350 lines, and every sample contained at least four distinct forms of indirect control flow.</p>
 
             <table class="results">
                 <thead>
                     <tr>
                         <th></th>
-                        <th>Rewrite existing code</th>
-                        <th>Skeleton, then reconstruct</th>
+                        <th>Dataset transformation</th>
+                        <th>Skeleton generation and reconstruction</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <th>Hope</th>
-                        <td>Inherit the variety of real programs</td>
-                        <td>Make the model rebuild around a chosen shape</td>
+                        <th>Method</th>
+                        <td>gpt-4o few-shot rewrite of CodeNet, The Stack, and Wild-C, followed by compile-and-repair</td>
+                        <td>Jinja2 skeleton, structural noise, then reconstruction with at most two Clang repairs</td>
                     </tr>
                     <tr>
-                        <th>What we got</th>
-                        <td>Indirect calls were present, often looking pasted on. Length stuck around 90–130 lines.</td>
-                        <td>300 of 300 compiled after repair, at about 250–350 lines, with several indirect-call patterns in each.</td>
+                        <th>Result</th>
+                        <td>Indirect calls were present, often incidental to the original computation. Length concentrated around 90–130 lines.</td>
+                        <td>300 of 300 programs compiled for native code and WebAssembly, at about 250–350 lines, with at least four indirect-call patterns in each.</td>
                     </tr>
                 </tbody>
             </table>
-            <p>The second pipeline was the one we would actually use for a dataset. The rewrite path had seemed promising because the source was already diverse. The skeleton made that diversity something we could request.</p>
+            <p>We adopted the second pipeline for dataset construction. Its noise remains mostly syntactic: names change and blocks move, while the underlying template stays similar. A later version would mutate the abstract syntax tree and check that the generated pointers are reached during execution.</p>
 
         </div>
     </main>

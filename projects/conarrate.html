@@ -41,8 +41,51 @@
             <h1>CoNarrate</h1>
             <p class="meta">Jan 2025 – Sep 2025 · With Hei Ching Iu and Ph.D. student <a href="https://dingdong-liu.github.io/" target="_blank" rel="noopener noreferrer">Dingdong Liu</a> · Prof. <a href="https://www.cse.ust.hk/~mxj/" target="_blank" rel="noopener noreferrer">Xiaojuan Ma</a></p>
 
-            <p>A lot of remote care happens by message. The patient writes down what is wrong, and a doctor reads it later. That first message is often too thin to act on, and the doctor spends the next few messages pulling the rest out. CoNarrate is an intake assistant that asks follow-up questions before the doctor sees the note.</p>
-            <p>On this paper I built the front end of that conversational agent, took part in the discussions that set the study method, and helped run the user studies.</p>
+            <p>Asynchronous telehealth depends on the patient’s initial written report. That report often omits details a clinician needs, and the consultation then continues through several rounds of clarification. CoNarrate is an intake assistant that elicits those details before the clinician sees the note.</p>
+            <p>I assisted in building the React front end, took part in setting the study method, and helped run the user studies.</p>
+
+            <h2>Narrative prematureness</h2>
+            <p>We compared opening self-reports with the record after a physician’s follow-up questions, on a sample of 5,000 asynchronous consultations from MedDialog. Five gaps recurred. A report can omit a detail required to place the event. It can state an incorrect belief, or present a self-diagnosis as an established fact. It can explain a symptom with a personal anecdote, or apply an external rule of thumb to the present case.</p>
+            <p>We represent these fragments in a space called DIBH. The unit is an atomic information node, the smallest piece a patient can verify from their own experience. Each node is one of four kinds: Data, a measurement; Information, a first-person symptom or history; Belief, the patient’s interpretation; or Heuristic, a rule acquired from outside. The five gaps reduce to three operations on this graph. Omission leaves a node out. Substitution places incorrect content in a node, or presents a belief as data. Fabrication adds a relation the evidence does not support. Every gap in the sample was one of these three operations. The corresponding follow-ups request the missing fact, ask the patient to check a belief, or separate an explanation from the symptom.</p>
+
+            <h2>System</h2>
+            <p>CoNarrate applies this check to the pre-visit form. A three-stage pipeline, using GPT-4.1, embeds the form as atomic information nodes, scores each gap by the extent to which it would hinder a physician, and generates a question when that hindrance score exceeds 0.3. On a held-out set of annotated narratives, detection reached an F1 of 0.887. Answers are paraphrased back into the form. Additions introduced by the assistant are highlighted for the patient to review before submission.</p>
+            <p>The interface is a React front end, which I assisted in building, with LangChain on the server to run the pipeline and retain the conversation. Both study conditions then use the same consultation screen, on which a simulated physician replies according to a delayed timetable. A pilot with five participants also included a second assistant that revised the patient’s messages during the consultation. After the intake form contained more clinical detail, the simulated physician asked few clarifying questions, and participants preferred to address the physician directly. We removed that assistant and limited CoNarrate to the intake.</p>
+
+            <h2>Evaluation</h2>
+            <p>The evaluation was between subjects, with 46 participants, each discussing a real concern. Every participant completed the same pre-visit form and then messaged the simulated physician. The baseline condition submitted the form as written. The CoNarrate condition completed the scaffolding dialogue first. Before that dialogue, the two groups contained similar amounts of clinical detail. After it, CoNarrate forms contained more detail in five categories: symptoms, triggers, disease evolution, associated symptoms, and prior management. Chief complaint, onset, and review of systems remained comparable. The dialogue added 14.8 new nodes per patient on average, rewrote 3.5, left 7.2 unchanged, and removed 1.2.</p>
+
+            <table class="results">
+                <thead>
+                    <tr>
+                        <th>Measure</th>
+                        <th>Baseline</th>
+                        <th>CoNarrate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Consultation rounds, median</th>
+                        <td>22</td>
+                        <td>14</td>
+                    </tr>
+                    <tr>
+                        <th>Consultation time, median</th>
+                        <td>45.5 min</td>
+                        <td>27.9 min</td>
+                    </tr>
+                    <tr>
+                        <th>New clinical details from the intake dialogue</th>
+                        <td>—</td>
+                        <td>14.8 nodes per patient</td>
+                    </tr>
+                    <tr>
+                        <th>Total time, including the intake chat</th>
+                        <td colspan="2">Still shorter with CoNarrate</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Blinded raters scored the same forms before and after the dialogue on adapted Gricean maxims. Clarity, quality, completeness, and relevance increased, and ratings of all five prematureness types decreased. Counting the time spent with the assistant, total task time remained shorter for CoNarrate. Cognitive load was lower on three NASA-TLX subscales. Consultation satisfaction stayed high in both conditions.</p>
             <p>The paper will appear at UIST 2026. The author list is on <a href="../publications.html#conarrate">Publications</a>.</p>
 
         </div>

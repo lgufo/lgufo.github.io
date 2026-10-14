@@ -41,14 +41,66 @@
             <h1>Medical imaging experiments</h1>
             <p class="meta">Aug 2024 – Dec 2024 · With Prof. <a href="https://xmengli.github.io/" target="_blank" rel="noopener noreferrer">Xiaomeng Li</a> and Ph.D. student <a href="https://mcgregorwwww.github.io/" target="_blank" rel="noopener noreferrer">Haonan Wang</a></p>
 
-            <p>This was my first research project. I learned the ordinary training loop in PyTorch — load a batch, run the model, compute a loss, step the optimizer — and used it on two medical tasks.</p>
+            <p>I trained two vision models in PyTorch on a remote GPU: a classifier for skin lesions and a segmentation model for the spleen in CT.</p>
 
-            <h2>Benign or malignant, from a skin photo</h2>
-            <p>The first task was to tell a harmless skin lesion from one that can spread, using the ISIC 2016 collection: 900 training images and 379 test images. I started from ResNet-50, a vision model already trained on ordinary photographs, and replaced its last layer with a single yes-or-no score. Training used Adam and binary cross-entropy. The two classes are uneven, so a weighted sampler drew the rarer class more often and kept the model from learning only the common one. A score above one half counted as malignant. Accuracy landed near 90% on the training images and about 80% on the test images.</p>
+            <h2>Skin lesion classification</h2>
+            <p>The task is binary classification of skin lesions as benign or malignant, using the ISIC 2016 collection: 900 training images and 379 test images. I fine-tuned an ImageNet-pretrained ResNet-50, replacing the final layer with a single logit and a sigmoid. Training used Adam and binary cross-entropy, with a decision threshold of 0.5. The set contains substantially more malignant images than benign ones, so a weighted sampler balanced the two classes. Training accuracy was about 90%, and test accuracy about 80%.</p>
 
-            <h2>Where is the spleen, in a CT volume</h2>
-            <p>The second task asks for a map, not a single label: which voxels in a 3D CT scan belong to the spleen. I used a U-Net. It squeezes the volume down until the organ is easy to recognize, then expands back to a mask the same size as the input. The scans arrive in different shapes, so they were resized to a shared one. Training again reached about 90% on the training set and about 80% on the test set.</p>
-            <p>Both were a first pass at taking a known architecture and fitting it to a medical dataset. Along the way I learned the training loop properly, and how to run it on a remote GPU.</p>
+            <h2>Spleen CT segmentation</h2>
+            <p>The task is to label spleen voxels in a 3D CT volume. I trained a 3D U-Net with four downsampling stages and four upsampling stages: max pooling on the encoder path, transposed convolution on the decoder path, and skip connections between matching levels. Volumes were resized to 128×128×16. Training loss settled near 0.01 and held-out loss near 0.02. Dice was about 90% on the training volumes and about 80% on the held-out set.</p>
+            <div class="quad">
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/seg_train_loss.png" alt="Training loss for spleen segmentation, falling smoothly toward 0.01">
+                    </div>
+                    <figcaption>Training loss.</figcaption>
+                </figure>
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/seg_train_acc.png" alt="Training Dice for spleen segmentation, rising toward 0.9">
+                    </div>
+                    <figcaption>Training Dice.</figcaption>
+                </figure>
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/seg_test_loss.png" alt="Validation loss for spleen segmentation, falling toward 0.02">
+                    </div>
+                    <figcaption>Held-out loss.</figcaption>
+                </figure>
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/seg_test_acc.jpeg" alt="Validation Dice for spleen segmentation, rising toward 0.8">
+                    </div>
+                    <figcaption>Held-out Dice.</figcaption>
+                </figure>
+            </div>
+            <p>Two of the four NIfTI volumes inspected in ITK-SNAP are shown below. The predicted mask follows the spleen and is less sharply bounded than the ground truth.</p>
+            <div class="quad">
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/slice_0.png" alt="ITK-SNAP views of a ground-truth spleen mask">
+                    </div>
+                    <figcaption>Ground truth, case 1.</figcaption>
+                </figure>
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/slice_1.png" alt="ITK-SNAP views of the predicted spleen mask for the same case">
+                    </div>
+                    <figcaption>Prediction, case 1.</figcaption>
+                </figure>
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/slice_2.png" alt="ITK-SNAP views of a second ground-truth spleen mask">
+                    </div>
+                    <figcaption>Ground truth, case 2.</figcaption>
+                </figure>
+                <figure>
+                    <div class="plate">
+                        <img src="../images/medical/slice_3.png" alt="ITK-SNAP views of the predicted spleen mask for the second case">
+                    </div>
+                    <figcaption>Prediction, case 2.</figcaption>
+                </figure>
+            </div>
 
         </div>
     </main>

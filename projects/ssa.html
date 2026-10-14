@@ -41,11 +41,13 @@
             <h1>LLVM SSA construction</h1>
             <p class="meta">Summer 2025 · Supervised by Prof. <a href="https://shenjiasi.com/" target="_blank" rel="noopener noreferrer">Jiasi Shen</a>, with Ph.D. student <a href="https://hr.tan.pub/" target="_blank" rel="noopener noreferrer">Huiri Tan</a></p>
 
-            <p>Compilers keep asking a small question: when an instruction reads <em>x</em>, which earlier write produced that value? With branches and loops, the answer depends on the path the program took. Static single-assignment form, SSA, clears that up. Every assignment receives its own name, so each use points at exactly one definition.</p>
-            <p>I implemented that construction as an <a href="https://llvm.org/" target="_blank" rel="noopener noreferrer">LLVM</a> pass, following Cytron’s algorithm as presented in Cooper and Torczon’s <em>Engineering a Compiler</em>. The pass takes LLVM IR in which a variable can still be assigned more than once, and rewrites it so each assignment is unique. To learn the infrastructure first, I worked through LLVM’s Kaleidoscope tutorial, a tiny language with a lexer, a parser, and code generation, and wrote a small analysis pass that counted blocks, instructions, and loop nesting. The SSA pass came after that.</p>
+            <p>The pass takes <a href="https://llvm.org/" target="_blank" rel="noopener noreferrer">LLVM</a> IR in which a variable may be assigned more than once and rewrites it so that each assignment has a distinct name. A use then refers to exactly one definition, including across branches and loops. The construction follows Cytron’s algorithm as presented in Cooper and Torczon’s <em>Engineering a Compiler</em>: a dominance tree, phi functions on the dominance frontier, and a renaming walk. The pass was the first component of a UROP on compiler autotuning.</p>
+
+            <h2>Setup</h2>
+            <p>Before the SSA pass, I completed LLVM’s Kaleidoscope tutorial, covering lexing, parsing, the abstract syntax tree, code generation, and control flow. I then implemented an analysis pass that reports, for each function, the number of basic blocks, the number of instructions, the maximum loop-nesting depth, and the operand types. The surrounding work was building LLVM with CMake and Ninja, registering the pass, and traversing the IR.</p>
 
             <h2>Dominance</h2>
-            <p>Block A dominates block B when every path from the function’s entry to B goes through A. The closest such block is B’s immediate dominator, and those links make a tree. Later steps walk that tree, so this one has to be right. I computed the dominance sets with the usual fixed-point iteration. Reverse postorder makes it settle in few rounds. The immediate dominator is then the member of the set, other than the block itself, that does not dominate the other members.</p>
+            <p>Block A dominates block B when every path from the function entry to B passes through A. The immediate dominator of B is the closest such block, and the immediate-dominator relation forms a tree. Later steps walk that tree. I computed dominance sets by fixed-point iteration in reverse postorder. For every block other than the entry, the immediate dominator is the member of its dominance set, excluding the block itself, that dominates no other member of the set.</p>
 <pre class="code">Dom(entry) = { entry }
 for each other block b:
     Dom(b) = all blocks
@@ -57,8 +59,8 @@ for each block b except entry:
     idom(b) = the member of Dom(b), other than b,
               that dominates no other member</pre>
 
-            <h2>Phi functions</h2>
-            <p>At a join, two incoming paths may carry different values for the same variable. SSA marks that with a phi at the top of the block: a compact choice of which path arrived. A phi at every join would be wasteful. The algorithm places one only on the dominance frontier of a definition, the first blocks that the definition no longer dominates. That is where a new value becomes visible to more than one path. Inserting a phi can itself count as a definition, so the frontier of that block may need a phi too.</p>
+            <h2>Phi placement</h2>
+            <p>At a control-flow join, incoming paths may carry different values of the same variable. SSA represents that choice with a phi instruction at the start of the block. The algorithm inserts a phi only on the dominance frontier of a definition: the first blocks that the definition does not dominate, where the new value becomes visible along more than one path. A phi is itself a definition, so the frontier of its block may require a further phi.</p>
 <pre class="code">for each variable v:
     assigned = blocks that write v
     worklist = assigned
@@ -71,7 +73,7 @@ for each block b except entry:
                     add f to assigned and to worklist</pre>
 
             <h2>Renaming</h2>
-            <p>A walk down the dominator tree keeps a stack of names for each original variable. In a block, each assignment pushes a fresh name, and each use is rewritten to the name on top of the stack. Successor blocks receive the matching operand on their phis. When the walk leaves the block, those names are popped, so a sibling branch sees the names from the parent again.</p>
+            <p>Renaming walks the dominator tree and maintains a stack of names for each original variable. In a block, each assignment pushes a fresh name, and each use is rewritten to the name on top of its stack. The current names fill the phi operands of successor blocks for the outgoing edge. On return from the block, those names are popped, so a sibling in the dominator tree again sees the names defined in the parent.</p>
 <pre class="code">rename(b):
     pushed = empty
     for each phi in b:
@@ -88,8 +90,8 @@ for each block b except entry:
     for each child c of b in the dominator tree:
         rename(c)
     pop every name recorded in pushed</pre>
-            <h2>A branch that joins</h2>
-            <p>The first example stores into one stack slot on both sides of a branch, then loads it after the join. The value written in the entry is overwritten on both paths, so the pass drops the slot. What reaches the return is a phi. Yellow marks the stack traffic the pass removes, and the phi that replaces it.</p>
+            <h2>Example: conditional join</h2>
+            <p>The first example writes one stack slot on both sides of a branch and loads it after the join. Both paths overwrite the value stored in the entry, so the pass removes the slot. The value that reaches the return is a phi. Highlighted instructions are the stack operations the pass removes and the phi that replaces them.</p>
             <div class="compare">
                 <p>Before</p>
                 <p>After</p>
@@ -129,8 +131,8 @@ end:                                 ; preds = %else, %then
 }</pre>
             </div>
 
-            <h2>A loop with a side path</h2>
-            <p>The second example keeps two stack slots across a loop. Inside the body one of them is updated, and on a side path the two values are multiplied and stored back before the next iteration. After the pass, those slots are phis at the loop header and at the join inside the body. Yellow again marks the stack traffic and the phis and uses that replace it. The loop index was already a phi, so it stays in the ordinary color.</p>
+            <h2>Example: loop with a side path</h2>
+            <p>The second example keeps two stack slots live across a loop. The loop body updates one of them, and a side path multiplies the two values and stores the product before the next iteration. After the pass, each slot is a phi at the loop header and at the join inside the body. Highlighted instructions are the removed stack operations and the phis and uses that replace them. The loop index was already in SSA, so the pass leaves it unchanged.</p>
             <div class="compare">
                 <p>Before</p>
                 <p>After</p>
@@ -217,7 +219,7 @@ exit:                                ; preds = %loop
 <span class="hl">  ret i32 %x0</span>
 }</pre>
             </div>
-            <p>Ideas that came after this, about using similar analysis passes to help a model choose optimization sequences, were plans for later work. This page is about the pass that was actually built.</p>
+            <p>These two functions were the test cases. In the branch, the two stores of one slot become the operands of a single phi, and the slot is removed. In the loop, each slot live across a back edge becomes a phi at the header, and the join inside the body receives a phi of its own.</p>
 
         </div>
     </main>

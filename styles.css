@@ -318,17 +318,28 @@ pre.code .hl {
     stroke-width: 1;
 }
 
-.chart .bar-auto {
+.chart .bar-auto,
+.chart .bar-m8 {
     fill: var(--link);
 }
 
-.chart .bar-manual {
+.chart .bar-manual,
+.chart .bar-c8 {
     fill: var(--link-hover);
+}
+
+.chart .bar-m16 {
+    fill: var(--meta);
+}
+
+.chart .bar-c16 {
+    fill: var(--fg);
 }
 
 .legend {
     display: flex;
-    gap: 1.1rem;
+    flex-wrap: wrap;
+    gap: 0.45rem 1.1rem;
     margin: 0.35rem 0 0;
     font-size: 0.92rem;
     color: var(--meta);
@@ -342,12 +353,22 @@ pre.code .hl {
     vertical-align: -0.05rem;
 }
 
-.legend .auto {
+.legend .auto,
+.legend .m8 {
     background: var(--link);
 }
 
-.legend .manual {
+.legend .manual,
+.legend .c8 {
     background: var(--link-hover);
+}
+
+.legend .m16 {
+    background: var(--meta);
+}
+
+.legend .c16 {
+    background: var(--fg);
 }
 
 .results {
@@ -703,7 +724,8 @@ section .entry:last-child {
         font-size: 2.2rem;
     }
 
-    .compare {
+    .compare,
+    .quad {
         grid-template-columns: 1fr;
     }
 

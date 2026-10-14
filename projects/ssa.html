@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLVM SSA construction · Li Zhang</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <script>
+        try {
+            if (localStorage.getItem("theme") === "dark") {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+        } catch (e) {}
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="../index.html">Li Zhang</a>
+            <div class="header-right">
+                <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+                <nav id="site-nav" aria-label="Primary">
+                    <a href="../index.html">Home</a>
+                    <a href="../projects.html" aria-current="page">Projects</a>
+                    <a href="../publications.html">Publications</a>
+                    <a href="../experience.html">Experience</a>
+                    <a href="../gallery.html">Gallery</a>
+                    <button class="theme-toggle" type="button" aria-pressed="false">Dark</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="writeup">
+        <div class="prose">
+            <p class="back"><a href="../projects.html">Projects</a></p>
+
+            <h1>LLVM SSA construction</h1>
+            <p class="meta">Summer 2025 · Supervised by Prof. <a href="https://shenjiasi.com/" target="_blank" rel="noopener noreferrer">Jiasi Shen</a>, with Ph.D. student <a href="https://hr.tan.pub/" target="_blank" rel="noopener noreferrer">Huiri Tan</a></p>
+
+            <p>Compilers keep asking a small question: when an instruction reads <em>x</em>, which earlier write produced that value? With branches and loops, the answer depends on the path the program took. Static single-assignment form, SSA, clears that up. Every assignment receives its own name, so each use points at exactly one definition.</p>
+            <p>I implemented that construction as an <a href="https://llvm.org/" target="_blank" rel="noopener noreferrer">LLVM</a> pass, following Cytron’s algorithm as presented in Cooper and Torczon’s <em>Engineering a Compiler</em>. The pass takes LLVM IR in which a variable can still be assigned more than once, and rewrites it so each assignment is unique. To learn the infrastructure first, I worked through LLVM’s Kaleidoscope tutorial, a tiny language with a lexer, a parser, and code generation, and wrote a small analysis pass that counted blocks, instructions, and loop nesting. The SSA pass came after that.</p>
+
+            <h2>Dominance</h2>
+            <p>Block A dominates block B when every path from the function’s entry to B goes through A. The closest such block is B’s immediate dominator, and those links make a tree. Later steps walk that tree, so this one has to be right. I computed the dominance sets with the usual fixed-point iteration. Reverse postorder makes it settle in few rounds. The immediate dominator is then the member of the set, other than the block itself, that does not dominate the other members.</p>
+<pre class="code">Dom(entry) = { entry }
+for each other block b:
+    Dom(b) = all blocks
+repeat until nothing changes:
+    for each block b in reverse postorder, except entry:
+        Dom(b) = { b } ∪ intersection of Dom(p)
+                 over predecessors p of b
+for each block b except entry:
+    idom(b) = the member of Dom(b), other than b,
+              that dominates no other member</pre>
+
+            <h2>Phi functions</h2>
+            <p>At a join, two incoming paths may carry different values for the same variable. SSA marks that with a phi at the top of the block: a compact choice of which path arrived. A phi at every join would be wasteful. The algorithm places one only on the dominance frontier of a definition, the first blocks that the definition no longer dominates. That is where a new value becomes visible to more than one path. Inserting a phi can itself count as a definition, so the frontier of that block may need a phi too.</p>
+<pre class="code">for each variable v:
+    assigned = blocks that write v
+    worklist = assigned
+    while worklist is not empty:
+        b = pop(worklist)
+        for each block f in the dominance frontier of b:
+            if f has no phi for v:
+                insert phi(v) at the top of f
+                if f is not in assigned:
+                    add f to assigned and to worklist</pre>
+
+            <h2>Renaming</h2>
+            <p>A walk down the dominator tree keeps a stack of names for each original variable. In a block, each assignment pushes a fresh name, and each use is rewritten to the name on top of the stack. Successor blocks receive the matching operand on their phis. When the walk leaves the block, those names are popped, so a sibling branch sees the names from the parent again.</p>
+<pre class="code">rename(b):
+    pushed = empty
+    for each phi in b:
+        push a fresh name for the phi’s variable
+        record that push in pushed
+    for each ordinary instruction I in b:
+        rewrite each use to the name on top of its stack
+        if I writes v:
+            push a fresh name for v
+            record that push in pushed
+    for each successor s of b:
+        fill the phi operands in s for the edge b → s
+        from the names currently on top of the stacks
+    for each child c of b in the dominator tree:
+        rename(c)
+    pop every name recorded in pushed</pre>
+            <h2>A branch that joins</h2>
+            <p>The first example stores into one stack slot on both sides of a branch, then loads it after the join. The value written in the entry is overwritten on both paths, so the pass drops the slot. What reaches the return is a phi. Yellow marks the stack traffic the pass removes, and the phi that replaces it.</p>
+            <div class="compare">
+                <p>Before</p>
+                <p>After</p>
+<pre class="code">define i32 @test(i32 %cond) {
+entry:
+<span class="hl">  %x = alloca i32</span>
+<span class="hl">  store i32 1, i32* %x</span>
+  %cmp = icmp eq i32 %cond, 0
+  br i1 %cmp, label %then, label %else
+
+then:
+<span class="hl">  store i32 2, i32* %x</span>
+  br label %end
+
+else:
+<span class="hl">  store i32 3, i32* %x</span>
+  br label %end
+
+end:
+<span class="hl">  %y = load i32, i32* %x</span>
+<span class="hl">  ret i32 %y</span>
+}</pre>
+<pre class="code">define i32 @test(i32 %cond) {
+entry:
+  %cmp = icmp eq i32 %cond, 0
+  br i1 %cmp, label %then, label %else
+
+then:                                ; preds = %entry
+  br label %end
+
+else:                                ; preds = %entry
+  br label %end
+
+end:                                 ; preds = %else, %then
+<span class="hl">  %x0 = phi i32 [ 3, %else ], [ 2, %then ]</span>
+<span class="hl">  ret i32 %x0</span>
+}</pre>
+            </div>
+
+            <h2>A loop with a side path</h2>
+            <p>The second example keeps two stack slots across a loop. Inside the body one of them is updated, and on a side path the two values are multiplied and stored back before the next iteration. After the pass, those slots are phis at the loop header and at the join inside the body. Yellow again marks the stack traffic and the phis and uses that replace it. The loop index was already a phi, so it stays in the ordinary color.</p>
+            <div class="compare">
+                <p>Before</p>
+                <p>After</p>
+<pre class="code">define i32 @complex(i32 %a, i32 %b, i32 %n) {
+entry:
+<span class="hl">  %x = alloca i32</span>
+<span class="hl">  %y = alloca i32</span>
+<span class="hl">  store i32 %a, i32* %x</span>
+<span class="hl">  store i32 %b, i32* %y</span>
+  br label %loop
+
+loop:
+  %i = phi i32 [ 0, %entry ], [ %i.next, %merge ]
+  %cond1 = icmp slt i32 %i, %n
+  br i1 %cond1, label %body, label %exit
+
+body:
+<span class="hl">  %tmp1 = load i32, i32* %x</span>
+<span class="hl">  %tmp2 = load i32, i32* %y</span>
+<span class="hl">  %cond2 = icmp sgt i32 %tmp1, %tmp2</span>
+  br i1 %cond2, label %then, label %else
+
+then:
+<span class="hl">  %add = add i32 %tmp1, 1</span>
+<span class="hl">  store i32 %add, i32* %x</span>
+  br label %merge
+
+else:
+<span class="hl">  %sub = sub i32 %tmp2, 1</span>
+<span class="hl">  store i32 %sub, i32* %y</span>
+  br label %merge
+
+merge:
+  %i.next = add i32 %i, 1
+  %cond3 = icmp eq i32 %i.next, 5
+  br i1 %cond3, label %special, label %loop
+
+special:
+<span class="hl">  %tmp3 = load i32, i32* %x</span>
+<span class="hl">  %tmp4 = load i32, i32* %y</span>
+<span class="hl">  %mul = mul i32 %tmp3, %tmp4</span>
+<span class="hl">  store i32 %mul, i32* %x</span>
+  br label %loop
+
+exit:
+<span class="hl">  %result = load i32, i32* %x</span>
+<span class="hl">  ret i32 %result</span>
+}</pre>
+<pre class="code">define i32 @complex(i32 %a, i32 %b, i32 %n) {
+entry:
+  br label %loop
+
+loop:                                ; preds = %special, %merge, %entry
+<span class="hl">  %y0 = phi i32 [ %y1, %special ], [ %y1, %merge ], [ %b, %entry ]</span>
+<span class="hl">  %x0 = phi i32 [ %mul, %special ], [ %x1, %merge ], [ %a, %entry ]</span>
+  %i = phi i32 [ 0, %entry ], [ %i.next, %merge ]
+  %cond1 = icmp slt i32 %i, %n
+  br i1 %cond1, label %body, label %exit
+
+body:                                ; preds = %loop
+<span class="hl">  %cond2 = icmp sgt i32 %x0, %y0</span>
+  br i1 %cond2, label %then, label %else
+
+then:                                ; preds = %body
+<span class="hl">  %add = add i32 %x0, 1</span>
+  br label %merge
+
+else:                                ; preds = %body
+<span class="hl">  %sub = sub i32 %y0, 1</span>
+  br label %merge
+
+merge:                               ; preds = %else, %then
+<span class="hl">  %y1 = phi i32 [ %sub, %else ], [ %y0, %then ]</span>
+<span class="hl">  %x1 = phi i32 [ %x0, %else ], [ %add, %then ]</span>
+  %i.next = add i32 %i, 1
+  %cond3 = icmp eq i32 %i.next, 5
+  br i1 %cond3, label %special, label %loop
+
+special:                             ; preds = %merge
+<span class="hl">  %mul = mul i32 %x1, %y1</span>
+  br label %loop
+
+exit:                                ; preds = %loop
+<span class="hl">  ret i32 %x0</span>
+}</pre>
+            </div>
+            <p>Ideas that came after this, about using similar analysis passes to help a model choose optimization sequences, were plans for later work. This page is about the pass that was actually built.</p>
+
+        </div>
+    </main>
+
+    <footer>
+        <p class="contact-line">
+            <a class="icon-link" href="mailto:lzhangdv@connect.ust.hk" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg></a>
+            <a class="icon-link" href="https://github.com/lgufo" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+            <a class="icon-link" href="https://scholar.google.com/citations?user=9XF4JXMAAAAJ" target="_blank" rel="noopener noreferrer" aria-label="Google Scholar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269z"/><path fill-rule="evenodd" d="M12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm0 2.4a4.6 4.6 0 1 1 0 9.2 4.6 4.6 0 0 1 0-9.2z"/></svg></a>
+            <a class="icon-link" href="https://www.linkedin.com/in/li-zhang-319680346/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+        </p>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

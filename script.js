@@ -1,82 +1,41 @@
-// Smooth scrolling for navigation links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
+(function () {
+    const root = document.documentElement;
+    const toggle = document.querySelector(".theme-toggle");
+    const menuBtn = document.querySelector(".menu-btn");
+    const nav = document.querySelector("#site-nav");
+
+    function applyTheme(theme) {
+        if (theme === "dark") {
+            root.setAttribute("data-theme", "dark");
+        } else {
+            root.removeAttribute("data-theme");
+            theme = "light";
         }
-    });
-});
-
-// Mobile menu toggle
-const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-const navMenu = document.querySelector('.nav-menu');
-
-mobileMenuBtn.addEventListener('click', function() {
-    mobileMenuBtn.classList.toggle('active');
-    navMenu.classList.toggle('active');
-});
-
-// Close mobile menu when clicking on a link
-document.querySelectorAll('.nav-menu a').forEach(link => {
-    link.addEventListener('click', function() {
-        mobileMenuBtn.classList.remove('active');
-        navMenu.classList.remove('active');
-    });
-});
-
-// Close mobile menu when clicking outside
-document.addEventListener('click', function(e) {
-    if (!mobileMenuBtn.contains(e.target) && !navMenu.contains(e.target)) {
-        mobileMenuBtn.classList.remove('active');
-        navMenu.classList.remove('active');
+        try {
+            localStorage.setItem("theme", theme);
+        } catch (e) {}
+        if (!toggle) return;
+        const dark = theme === "dark";
+        toggle.textContent = dark ? "Light" : "Dark";
+        toggle.setAttribute("aria-pressed", String(dark));
+        toggle.setAttribute("aria-label", dark ? "Switch to a white background" : "Switch to a black background");
     }
-});
 
-// Add scroll effect to navigation
-window.addEventListener('scroll', function() {
-    const header = document.querySelector('header');
-    if (window.scrollY > 100) {
-        header.style.background = 'rgba(255, 255, 255, 0.98)';
-        header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
-    } else {
-        header.style.background = 'rgba(255, 255, 255, 0.95)';
-        header.style.boxShadow = 'none';
-    }
-});
+    applyTheme(root.getAttribute("data-theme") === "dark" ? "dark" : "light");
 
-// Simple fade-in animation for sections
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-};
-
-const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-        }
+    toggle?.addEventListener("click", function () {
+        applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
     });
-}, observerOptions);
 
-// Observe all sections except hero
-document.querySelectorAll('section:not(.hero)').forEach(section => {
-    section.style.opacity = '0';
-    section.style.transform = 'translateY(30px)';
-    section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    observer.observe(section);
-});
+    menuBtn?.addEventListener("click", function () {
+        const open = nav.classList.toggle("open");
+        menuBtn.setAttribute("aria-expanded", String(open));
+    });
 
-// Add current year to footer
-document.addEventListener('DOMContentLoaded', function() {
-    const currentYear = new Date().getFullYear();
-    const footerText = document.querySelector('footer p');
-    if (footerText) {
-        footerText.innerHTML = `&copy; ${currentYear} Li Zhang. All rights reserved.`;
-    }
-});
+    nav?.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", function () {
+            nav.classList.remove("open");
+            menuBtn?.setAttribute("aria-expanded", "false");
+        });
+    });
+})();

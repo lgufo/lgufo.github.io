@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undergraduate teaching assistant · Li Zhang</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <script>
+        try {
+            if (localStorage.getItem("theme") === "dark") {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+        } catch (e) {}
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="../index.html">Li Zhang</a>
+            <div class="header-right">
+                <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+                <nav id="site-nav" aria-label="Primary">
+                    <a href="../index.html">Home</a>
+                    <a href="../projects.html">Projects</a>
+                    <a href="../publications.html">Publications</a>
+                    <a href="../experience.html" aria-current="page">Experience</a>
+                    <a href="../gallery.html">Gallery</a>
+                    <button class="theme-toggle" type="button" aria-pressed="false">Dark</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="writeup">
+        <div class="prose">
+            <p class="back"><a href="../experience.html">Experience</a></p>
+
+            <h1>Undergraduate teaching assistant</h1>
+            <p class="meta">COMP 2611 Computer Organization · Dec 2025 – Feb 2026 · Prof. Cindy Xin Li</p>
+
+            <p>I prototyped the digital-logic labs by buying the parts and building three units: a 1-bit full adder, a 2-to-1 multiplexer, and a 1-bit ALU. The gates are 74HC chips in DIP packages, so the pins go straight into a breadboard.</p>
+
+            <h2>Parts</h2>
+            <p>The breadboard, power module, jumper wires, resistors, LEDs, capacitors, and switches came from Taobao. The 74HC chips came from LCSC. An MB-102 board has 830 tie points. The module takes a USB supply and puts 3.3 V and 5 V on the rails.</p>
+
+            <div class="quad">
+                <figure>
+                    <img src="../images/ta/breadboard.jpg" alt="An MB-102 solderless breadboard on a wooden desk">
+                    <figcaption>MB-102 breadboard, 830 holes.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/ta/power.jpg" alt="A breadboard power module beside a coiled USB cable">
+                    <figcaption>Power module and USB cable.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/ta/jumpers.jpg" alt="A compartment box of colored breadboard jumper wires">
+                    <figcaption>Jumper wires.</figcaption>
+                </figure>
+                <figure>
+                    <img src="../images/ta/parts.jpg" alt="Bags of ceramic capacitors, LEDs, resistors, and switches">
+                    <figcaption>Resistors, LEDs, capacitors, and switches.</figcaption>
+                </figure>
+            </div>
+
+            <h2>1-bit full adder</h2>
+            <p>A DIP switch sets two operand bits and a carry-in. XOR, AND, and OR gates (74HC86, 74HC08, and 74HC32) form the sum and the carry-out, and two LEDs show them. A 74HC low sits a little above ground, so the LED for 0 stays faintly lit.</p>
+            <figure class="frame">
+                <img src="../images/ta/adder.jpg" alt="A 1-bit full adder on a breadboard, with a DIP switch, logic chips, and two green LEDs">
+                <figcaption>Sum and carry, from separate gates.</figcaption>
+            </figure>
+
+            <h2>2-to-1 multiplexer</h2>
+            <p>A select bit chooses which of two inputs reaches the output. The board uses three chips: a 74HC04 inverter, a 74HC08 AND gate, and a 74HC32 OR gate.</p>
+            <figure class="frame">
+                <img src="../images/ta/mux.jpg" alt="A 2-to-1 multiplexer on a breadboard, with a DIP switch, three 74HC chips, and one green LED">
+                <figcaption>One select bit, one output LED.</figcaption>
+            </figure>
+
+            <h2>1-bit ALU</h2>
+            <p>The ALU puts an adder and two multiplexers on one board: a 74HC283, a 74HC157, and a 74HC153, with XOR, AND, and OR beside them. The DIP switch sets the operands and the operation. It uses the most chips of the three, and wiring it took about twice as long as the adder.</p>
+            <figure class="frame">
+                <img src="../images/ta/alu.jpg" alt="A 1-bit ALU on a breadboard, with a DIP switch, six 74HC chips, and two green LEDs">
+                <figcaption>Adder, multiplexers, and gates on one board.</figcaption>
+            </figure>
+
+            <h2>References</h2>
+            <p>Public breadboard circuits I looked through while choosing these labs.</p>
+            <ul class="refs">
+                <li><a href="https://www.youtube.com/watch?v=wvJc9CZcvBc" target="_blank" rel="noopener noreferrer">4-bit adder, built from gates</a></li>
+                <li><a href="https://www.youtube.com/watch?v=_0L8syN5D_Q" target="_blank" rel="noopener noreferrer">4-bit adder with a 74HC283</a></li>
+                <li><a href="https://www.youtube.com/watch?v=Kec0gzPF_3A" target="_blank" rel="noopener noreferrer">4-bit adder/subtractor</a></li>
+                <li><a href="https://www.youtube.com/watch?v=zWLrVTlCebg" target="_blank" rel="noopener noreferrer">2-to-1 multiplexer</a></li>
+                <li><a href="https://www.youtube.com/watch?v=m3NBUJkVGpg" target="_blank" rel="noopener noreferrer">4-bit ALU</a></li>
+                <li><a href="https://www.youtube.com/shorts/d3KaVPimLjk" target="_blank" rel="noopener noreferrer">Addition with a 74HC181</a></li>
+                <li><a href="https://www.youtube.com/shorts/9yxylVxFP-A" target="_blank" rel="noopener noreferrer">555 timer</a></li>
+                <li><a href="https://www.youtube.com/watch?v=QEFW4DcyOC0" target="_blank" rel="noopener noreferrer">4-bit counter</a></li>
+                <li><a href="https://www.youtube.com/watch?v=4LbrT-bv60c" target="_blank" rel="noopener noreferrer">4-bit counter on Tinkercad</a></li>
+                <li><a href="https://www.youtube.com/watch?v=l7fpswJrG04" target="_blank" rel="noopener noreferrer">1-bit breadboard computer</a></li>
+                <li><a href="https://www.youtube.com/playlist?list=PL09ZAP7_T_LlRINElIPxQyguPv2l-WSQ9" target="_blank" rel="noopener noreferrer">4-bit breadboard computer</a></li>
+                <li><a href="https://www.tinkercad.com/things/corocZ7PiuM-alu" target="_blank" rel="noopener noreferrer">4-bit ALU on Tinkercad</a></li>
+            </ul>
+        </div>
+    </main>
+
+    <footer>
+        <p class="contact-line">
+            <a class="icon-link" href="mailto:lzhangdv@connect.ust.hk" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg></a>
+            <a class="icon-link" href="https://github.com/lgufo" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+            <a class="icon-link" href="https://scholar.google.com/citations?user=9XF4JXMAAAAJ" target="_blank" rel="noopener noreferrer" aria-label="Google Scholar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269z"/><path fill-rule="evenodd" d="M12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm0 2.4a4.6 4.6 0 1 1 0 9.2 4.6 4.6 0 0 1 0-9.2z"/></svg></a>
+            <a class="icon-link" href="https://www.linkedin.com/in/li-zhang-319680346/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+        </p>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

@@ -39,40 +39,51 @@
             <p class="back"><a href="../projects.html">Projects</a></p>
 
             <h1>LLM serving simulation for hierarchical KV-cache systems</h1>
-            <p class="meta">Feb 2026 – Present · Mentored by <a href="https://andy-shiyi-liu.github.io/" target="_blank" rel="noopener noreferrer">Shiyi Liu</a>, advised by Prof. Yuan Xie</p>
+            <p class="meta">Feb 2026 – Present · Mentored by <a href="https://andy-shiyi-liu.github.io/" target="_blank" rel="noopener noreferrer">Shiyi Liu</a>, a Ph.D. student advised by Prof. Yuan Xie</p>
 
-            <p>When a language model serves a conversation, it stores keys and values for tokens it has already read. That KV cache is what lets the next token skip recomputing the whole prompt. <a href="https://vllm.ai/" target="_blank" rel="noopener noreferrer">vLLM</a> is a serving stack built around this. Requests wait in a queue. A scheduler chooses which tokens run in the current batch. The cache lives in GPU memory, in pages, so many requests can share the device.</p>
-            <p>The cache still outgrows the GPU. <a href="https://lmcache.ai/" target="_blank" rel="noopener noreferrer">LMCache</a> keeps it in layers: GPU memory, then CPU memory, then storage farther away. A later request that repeats an earlier prompt can fetch those layers back. The traffic is per layer. Stored cache moves from L2 into L1 and then onto the GPU before prefill, and new cache is written back after decode.</p>
+            <h2>Background</h2>
+            <p><a href="https://vllm.ai/" target="_blank" rel="noopener noreferrer">vLLM</a> is a high-throughput LLM serving engine that uses continuous batching and PagedAttention to efficiently manage inference workloads. Its scheduler dynamically batches requests at the token level, while PagedAttention manages the KV cache in non-contiguous memory blocks to reduce fragmentation and improve memory utilization. Together, these mechanisms enable efficient GPU utilization under dynamic serving workloads.</p>
+            <p>However, GPU memory remains a major constraint on LLM serving, especially for long-context and memory-intensive workloads. <a href="https://lmcache.ai/" target="_blank" rel="noopener noreferrer">LMCache</a> addresses this limitation by extending KV-cache management beyond GPU memory to a hierarchy of storage tiers, including CPU memory and remote storage. By offloading and reusing previously computed KV caches, LMCache can reduce redundant prefill computation and improve serving efficiency.</p>
+            <p>Integrating hierarchical KV-cache storage into LLM serving introduces additional complexity. Cache transfers must be coordinated with request scheduling and GPU execution, and their performance impact depends not only on transfer latency but also on whether data movement can overlap with computation.</p>
 
             <figure>
                 <div class="plate">
-                    <img src="../images/vllm_lmcache_structure.svg" alt="vLLM’s engine and scheduler beside LMCache, GPU memory, and CPU DRAM">
+                    <img src="../images/vllm/vllm_lmcache_structure.svg" alt="vLLM’s engine and scheduler beside LMCache, GPU memory, and CPU DRAM">
                 </div>
                 <figcaption>The pieces that have to stay in step: the vLLM engine and scheduler, LMCache, and the two memories the cache moves between.</figcaption>
             </figure>
 
-            <h2>What the simulator keeps real</h2>
-            <p>vLLM-Sim is a simulator built around that stack. I am extending it, with Shiyi Liu and advised by Prof. Yuan Xie, so the hierarchical cache can be studied without placing every experiment on the full machine.</p>
-            <p>The simulator leaves the vLLM frontend unchanged and swaps the hardware backend for a simulated one. Scheduling and memory decisions stay the ones the real stack would make. To look at those decisions on their own, I first wrote a small vLLM platform plugin that records a trace and replays it. In one run you can separate scheduling, memory management, model execution, and the hardware underneath.</p>
+            <h2>Simulating LLM serving systems</h2>
+            <p>vLLM-Sim is a simulation framework that preserves the software behavior of vLLM while replacing hardware execution with simulated backends. It retains the original scheduling and memory-management logic, allowing researchers to explore different hardware configurations and workload characteristics without repeatedly running expensive experiments on physical GPUs.</p>
+            <p>I am working with <a href="https://andy-shiyi-liu.github.io/" target="_blank" rel="noopener noreferrer">Shiyi Liu</a>, a Ph.D. student in Prof. Yuan Xie’s group, to extend vLLM-Sim with support for LMCache and hierarchical KV-cache storage.</p>
+            <p>To better understand the architecture of vLLM-Sim, I first developed a lightweight vLLM platform plugin for trace recording and replay. This helped me study the interactions among request scheduling, memory management, model execution, and the simulated hardware backend.</p>
+            <p>A key aspect of the simulator is preserving asynchronous execution. In real vLLM serving, the CPU scheduler can prepare subsequent batches while the GPU is executing the current batch. Accurately representing this overlap is essential for meaningful performance evaluation.</p>
 
             <figure>
                 <div class="plate">
-                    <img src="../images/vllm_async_scheduling.svg" alt="A timeline of scheduling overlapping GPU forwarding across four batches">
+                    <img src="../images/vllm/vllm_async_scheduling.svg" alt="A timeline of scheduling overlapping GPU forwarding across four batches">
                 </div>
                 <figcaption>Asynchronous scheduling. The scheduler prepares the next batch while the GPU is still running the current one.</figcaption>
             </figure>
 
-            <h2>Timing copies that are not really copied</h2>
-            <p>On a real machine, LMCache allocates CPU and GPU memory and copies between them. A simulator still has to give those copies a duration, and it still has to make later work wait for them. I pointed the KV-cache operations at simulated storage and timed each CPU-to-GPU transfer from profiled bandwidth. Dependent execution starts only when the matching transfer has finished on the simulator’s virtual timeline. I also adjusted the backend worker and the profiling path so this overlap survives: the scheduler can stay ahead of the GPU, as it does on the real server.</p>
+            <h2>Hierarchical KV-cache simulation</h2>
+            <p>My main contribution has been integrating LMCache into the simulated execution environment. Rather than performing actual KV-cache allocations and data transfers, the integration redirects memory operations to simulated storage and models transfer latency using profiled memory bandwidth.</p>
+            <p>An important challenge is preserving the dependencies between cache transfers and model execution. In the real system, GPU computation may need to wait for specific KV-cache transfers to complete, while other operations can proceed concurrently. The simulator must reproduce these relationships on its virtual timeline without performing the underlying data movement.</p>
+            <p>To support this behavior, I modified the LMCache integration, simulated backend worker, and profiling path to coordinate asynchronous transfers with model execution. These changes allow the simulator to represent overlapping scheduling, data movement, and computation, including pipelined execution and workloads mixing prefill and decode.</p>
 
             <figure>
                 <div class="plate">
-                    <img src="../images/lmcache_mp.svg" alt="A timeline of several requests moving KV cache from L2 to L1 to the GPU, then prefilling, decoding, and storing it back">
+                    <img src="../images/vllm/lmcache_mp.svg" alt="A timeline of several requests moving KV cache from L2 to L1 to the GPU, then prefilling, decoding, and storing it back">
                 </div>
                 <figcaption>One request’s cache, across batches: L2 to L1, L1 onto the GPU, prefill, decode, then the store back down the hierarchy.</figcaption>
             </figure>
 
-            <p>The integration runs. I am comparing it with a real system on time to first token, time per output token, and end-to-end latency, across workloads and memory setups. That comparison is still underway, so this page stops short of a fidelity result.</p>
+            <p>More broadly, this work explores a central challenge in systems simulation: which aspects of real execution must be modeled faithfully, and which can be abstracted away without compromising the usefulness of performance predictions?</p>
+
+            <h2>Evaluation and ongoing work</h2>
+            <p>The LMCache integration is functional, and I am currently evaluating its fidelity against real-system measurements. The evaluation focuses on key serving metrics, including time to first token (TTFT), time per output token (TPOT), and end-to-end latency, across different workload characteristics and memory configurations.</p>
+            <p>The goal is to understand how accurately the simulator captures the performance effects of hierarchical KV-cache storage, particularly those arising from asynchronous data movement, execution dependencies, and overlap between communication and computation.</p>
+            <p>Validation is ongoing, and quantitative fidelity results are not yet available.</p>
 
         </div>
     </main>

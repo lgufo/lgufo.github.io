@@ -38,4 +38,12 @@
             menuBtn?.setAttribute("aria-expanded", "false");
         });
     });
+
+    document.addEventListener("contextmenu", function (event) {
+        const overImage = Array.from(document.images).some(function (img) {
+            const box = img.getBoundingClientRect();
+            return event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+        });
+        if (overImage) event.preventDefault();
+    });
 })();

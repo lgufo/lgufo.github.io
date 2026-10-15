@@ -514,6 +514,12 @@ footer {
     gap: 0.85rem;
 }
 
+@property --orcid-ink {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #ffffff;
+}
+
 .icon-link {
     display: inline-flex;
     line-height: 0;
@@ -524,10 +530,25 @@ footer {
     width: 1.6rem;
     height: 1.6rem;
     overflow: visible;
+    color-interpolation: sRGB;
+}
+
+.icon-link svg * {
+    color-interpolation: sRGB;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .icon-link svg path {
     fill: currentColor;
+}
+
+.icon-link.orcid {
+    --orcid-ink: #ffffff;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, --orcid-ink 0.4s ease;
+}
+
+html[data-theme="dark"] .icon-link.orcid {
+    --orcid-ink: #1a1a1a;
 }
 
 .icon-link.orcid svg .orcid-bg {
@@ -535,11 +556,7 @@ footer {
 }
 
 .icon-link.orcid svg .orcid-fg {
-    color: #fff;
-}
-
-html[data-theme="dark"] .icon-link.orcid svg .orcid-fg {
-    color: var(--bg);
+    fill: var(--orcid-ink);
 }
 
 .frame {

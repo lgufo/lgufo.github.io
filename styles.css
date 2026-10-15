@@ -531,19 +531,15 @@ footer {
 }
 
 .icon-link.orcid svg .orcid-bg {
-    fill: var(--link);
-}
-
-.icon-link.orcid:hover svg .orcid-bg {
-    fill: var(--link-hover);
+    fill: currentColor;
 }
 
 .icon-link.orcid svg .orcid-fg {
-    fill: #fff;
+    color: #fff;
 }
 
 html[data-theme="dark"] .icon-link.orcid svg .orcid-fg {
-    fill: var(--bg);
+    color: var(--bg);
 }
 
 .frame {

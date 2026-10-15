@@ -39,7 +39,7 @@
             <p class="back"><a href="../projects.html">Projects</a></p>
 
             <h1>LLM serving simulation for hierarchical KV-cache systems</h1>
-            <p class="meta">Feb 2026 – Present · Mentored by <a href="https://andy-shiyi-liu.github.io/" target="_blank" rel="noopener noreferrer">Shiyi Liu</a>, a Ph.D. student advised by Prof. Yuan Xie</p>
+            <p class="meta">Feb 2026 – Present · Mentored by <a href="https://andy-shiyi-liu.github.io/" target="_blank" rel="noopener noreferrer">Shiyi Liu</a>, a Ph.D. student advised by Prof. <a href="https://ece.hkust.edu.hk/yuanxie" target="_blank" rel="noopener noreferrer">Yuan Xie</a></p>
 
             <h2>Background</h2>
             <p><a href="https://vllm.ai/" target="_blank" rel="noopener noreferrer">vLLM</a> is a high-throughput LLM serving engine that uses continuous batching and PagedAttention to efficiently manage inference workloads. Its scheduler dynamically batches requests at the token level, while PagedAttention manages the KV cache in non-contiguous memory blocks to reduce fragmentation and improve memory utilization. Together, these mechanisms enable efficient GPU utilization under dynamic serving workloads.</p>
@@ -55,7 +55,7 @@
 
             <h2>Simulating LLM serving systems</h2>
             <p>vLLM-Sim is a simulation framework that preserves the software behavior of vLLM while replacing hardware execution with simulated backends. It retains the original scheduling and memory-management logic, allowing researchers to explore different hardware configurations and workload characteristics without repeatedly running expensive experiments on physical GPUs.</p>
-            <p>I am working with <a href="https://andy-shiyi-liu.github.io/" target="_blank" rel="noopener noreferrer">Shiyi Liu</a>, a Ph.D. student in Prof. Yuan Xie’s group, to extend vLLM-Sim with support for LMCache and hierarchical KV-cache storage.</p>
+            <p>I am working with <a href="https://andy-shiyi-liu.github.io/" target="_blank" rel="noopener noreferrer">Shiyi Liu</a>, a Ph.D. student in Prof. <a href="https://ece.hkust.edu.hk/yuanxie" target="_blank" rel="noopener noreferrer">Yuan Xie</a>’s group, to extend vLLM-Sim with support for LMCache and hierarchical KV-cache storage.</p>
             <p>To better understand the architecture of vLLM-Sim, I first developed a lightweight vLLM platform plugin for trace recording and replay. This helped me study the interactions among request scheduling, memory management, model execution, and the simulated hardware backend.</p>
             <p>A key aspect of the simulator is preserving asynchronous execution. In real vLLM serving, the CPU scheduler can prepare subsequent batches while the GPU is executing the current batch. Accurately representing this overlap is essential for meaningful performance evaluation.</p>
 

@@ -27,15 +27,20 @@
         applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
     });
 
-    menuBtn?.addEventListener("click", function () {
-        const open = nav.classList.toggle("open");
+    function setMenuOpen(open) {
+        if (!nav || !menuBtn) return;
+        nav.classList.toggle("open", open);
         menuBtn.setAttribute("aria-expanded", String(open));
+        menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    }
+
+    menuBtn?.addEventListener("click", function () {
+        setMenuOpen(!nav.classList.contains("open"));
     });
 
     nav?.querySelectorAll("a").forEach(function (link) {
         link.addEventListener("click", function () {
-            nav.classList.remove("open");
-            menuBtn?.setAttribute("aria-expanded", "false");
+            setMenuOpen(false);
         });
     });
 

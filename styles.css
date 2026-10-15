@@ -538,16 +538,12 @@ footer {
     fill: var(--link-hover);
 }
 
-html[data-theme="dark"] .icon-link.orcid svg .orcid-bg {
-    fill: #2a7eaf;
-}
-
-html[data-theme="dark"] .icon-link.orcid:hover svg .orcid-bg {
-    fill: var(--link-hover);
-}
-
 .icon-link.orcid svg .orcid-fg {
     fill: #fff;
+}
+
+html[data-theme="dark"] .icon-link.orcid svg .orcid-fg {
+    fill: var(--bg);
 }
 
 .frame {

@@ -6,7 +6,7 @@
     --link-hover: #e0a800;
     --line: #e6e6e6;
     --nav: rgba(255, 255, 255, 0.92);
-    --menu: rgba(255, 255, 255, 0.84);
+    --menu: rgba(255, 255, 255, 0.96);
     --select: #d7ebf6;
     color-scheme: light;
 }
@@ -19,7 +19,7 @@ html[data-theme="dark"] {
     --link-hover: #f2cc4a;
     --line: #2e2e2e;
     --nav: rgba(26, 26, 26, 0.92);
-    --menu: rgba(26, 26, 26, 0.84);
+    --menu: rgba(26, 26, 26, 0.96);
     --select: #1a455c;
     color-scheme: dark;
 }
@@ -685,6 +685,8 @@ section .entry:last-child {
         padding: 0;
         border: none;
         background: transparent;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .menu-icon,
@@ -732,11 +734,11 @@ section .entry:last-child {
     }
 
     .menu-btn:hover,
+    .menu-btn:focus,
     .menu-btn:focus-visible {
         border-color: transparent;
-        color: var(--link);
-        outline: 2px solid var(--link);
-        outline-offset: 3px;
+        outline: none;
+        box-shadow: none;
     }
 
     #site-nav {
